@@ -1,24 +1,41 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+import { Stack } from "expo-router";
+import "nativewind";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { AuthProvider, useAuth } from "../contexts/authContext";
+import { UserProfileProvider } from "../contexts/UserProfileContext";
+import { ActiveSectionProvider } from "../contexts/ActiveSectionContext";
+import './global.css' 
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <AuthProvider>
+      <SafeAreaProvider>
+        <UserProfileProvider>
+          <ActiveSectionProvider>
+            <AuthGate />
+          </ActiveSectionProvider>
+        </UserProfileProvider>
+      </SafeAreaProvider>
+    </AuthProvider>
+  );
+}
+
+function AuthGate() {
+  const { currentUser } = useAuth();
+
+  if (!currentUser) {
+    // Only load sign-in screens
+    return (
       <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        <Stack.Screen name="signIn/SignInOptions" options={{ title: "Sign In" }} />
       </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    );
+  }
+
+  // Once logged in, show tab layout
+  return (
+    <Stack>
+      <Stack.Screen name="(tabs)" options={{ headerShown: true }} />
+    </Stack>
   );
 }
