@@ -1,50 +1,61 @@
-# Welcome to your Expo app 👋
+# Dinner Tonight?
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Tired of losing track of the recipes you sent to friends over Instagram? Or was it text? Or TikTok? Dinner Tonight fixes that by giving you a single location to save and organize your recipes, as well as share them with friends.
+
+This is an (in-production) recipe saving and sharing app created with React Native and Expo.
+
+## Built With
+- React Native
+- Expo
+- Firebase (for auth and data)
+- React Navigation
+- TypeScript
 
 ## Get started
+While this app can be downloaded and run locally using Expo, it will soon be on the iOS App Store, and possibly the Google Play Store.
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+You may need to install expo on your computer:
+```
+npm i expo
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+To run via Expo, download the repo onto your computer and type in the following
+```
+npx expo start
+```
+The following directions will then be displayed in your terminal:
+```
+› Press a │ open Android
+› Press i │ open iOS simulator
+› Press w │ open web
 
-## Learn more
+› Press j │ open debugger
+› Press r │ reload app
+› Press m │ toggle menu
+› shift+m │ more tools
+› Press o │ open project code in your editor
 
-To learn more about developing your project with Expo, look at the following resources:
+› Press ? │ show all commands
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+To run this project, you’ll  also need to add your Firebase config or API keys in an `.env` file.
 
-## Join the community
+Example:
+```
+EXPO_PUBLIC_FIREBASE_API_KEY=your_key_here
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_domain_here
+```
 
-Join our community of developers creating universal apps.
+## More coming soon
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+While Dinner Tonight is still in production, several features can be outlined below. Planned launch features are notated with **
+
+- Easily save and access your favorite recipes**
+- Search through all available recipes**
+- Add friends and send them recipes**
+- Submit links to scrape recipes from websites
+- Comment on recipes
+
+
+## License
+This project is licensed under the MIT License.
