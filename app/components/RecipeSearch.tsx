@@ -26,8 +26,8 @@ export default function RecipeSearch() {
   }, []); // ✅ dependency should be [], not [allRecipes]
 
   return (
-    <ScrollView>
-      <Text className="flex text-2xl place-content-center p-10">
+    <ScrollView className="flex-1 bg-lime-200  ">
+      <Text className="text-2xl font-bold self-center p-10">
         Search All Recipes
       </Text>
       {allRecipes.length > 0 ? (

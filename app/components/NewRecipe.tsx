@@ -340,10 +340,13 @@ export default function NewRecipe({  }: NewRecipeProps) {
             </View>
           ))}
 
+
           {/* Submit */}
-          <TouchableOpacity onPress={handleSubmit} className="mt-6 bg-blue-500 p-3 rounded-xl items-center">
-            <Text className="text-white font-bold text-lg">Submit Recipe</Text>
-          </TouchableOpacity>
+          <View className=" p-6 pb-12">
+            <TouchableOpacity onPress={() => handleSubmit()} className="mt-6 bg-blue-500 p-3 rounded-xl items-center">
+              <Text className="text-white font-bold text-lg">Submit Recipe</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
     </KeyboardAwareScrollView>

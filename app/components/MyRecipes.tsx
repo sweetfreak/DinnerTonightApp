@@ -70,8 +70,8 @@ export default function MyRecipes() {
     if (loading) return <Text>Loading...</Text>
 
     return (
-    <ScrollView>
-      <Text className='flex text-2xl place-content-center p-10'>My Recipes</Text>
+    <ScrollView className='flex-1 bg-lime-200'>
+      <Text className='text-2xl font-bold self-center p-10'>My Recipes</Text>
       {myRecipes?.length > 0 ? (
         myRecipes?.map((dish: Recipe) => { //, index: number) => {
           return (

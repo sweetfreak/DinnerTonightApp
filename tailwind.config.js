@@ -2,9 +2,11 @@
 module.exports = {
   presets: [require("nativewind/preset")],
   content: [
-    "./app/(tabs)/**/*.{js,jsx,ts,tsx}",
+    "./app/_layout.tsx",
+    "./app/index.tsx",
+    "./app/(tabs)/**/*.tsx",
     "./app/components/*.{js,jsx,ts,tsx}",
-    "./app/signIn/**/*.{js,jsx,ts,tsx}",
+    "./app/signIn/**/*.{js,jsx,ts,tsx}"
 
 ],
   theme: {

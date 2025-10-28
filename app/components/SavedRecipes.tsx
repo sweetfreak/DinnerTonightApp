@@ -54,8 +54,8 @@ export default function SavedRecipes() {
   if (loading) return <Text>...Loading</Text>;
 
   return (
-    <ScrollView>
-      <Text className="flex text-2xl place-content-center p-10">
+    <ScrollView className="flex-1 bg-lime-200  ">
+      <Text className="font-bold text-2xl self-center p-10">
         Saved Recipes
       </Text>
       {savedRecipes.length > 0 ? (

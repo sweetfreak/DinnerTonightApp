@@ -1,376 +1,227 @@
-import {useState, useEffect} from 'react'
-import type {ChangeEvent} from 'react'
-import { db } from "../../firebase/firebaseConfig"
-import { collection, addDoc, doc, setDoc, getDoc, updateDoc, arrayUnion, serverTimestamp } from "firebase/firestore";
-import {useAuth } from "../../contexts/authContext/index"
-import type UserProfile  from '../../types/User'
- import type Recipe from "../../types/Recipe"
+import { useState, useEffect } from "react";
+import { View, Text, TextInput, Button, Switch, TouchableOpacity } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { db } from "../../firebase/firebaseConfig";
+import { useUserProfile } from "../../contexts/UserProfileContext";
+import type Recipe from "../../types/Recipe";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
-interface EditRecipeProps {
-    currentUserProfile: UserProfile | null
-    //onRecipeAdded: (recipe: Recipe | null) => void
-    selectedRecipe: Recipe
-    openRecipe: (recipe: Recipe) => void
+export default function EditRecipe() {
+  const router = useRouter();
+  const { currentUserProfile } = useUserProfile();
+  const { uid, recipeId } = useLocalSearchParams<{ uid: string; recipeId: string }>();
 
-}
+  const [loading, setLoading] = useState(true);
+  const [recipeData, setRecipeData] = useState<Partial<Recipe>>({
+    dishName: "",
+    source: "",
+    chef: "",
+    cuisine: "",
+    description: "",
+    prepTime: "",
+    cookTime: "",
+    additionalTime: "",
+    totalTime: "",
+    servings: "",
+    imageURL: "",
+    ingredients: [""],
+    instructions: [""],
+    notes: "",
+    dietaryRestrictions: {
+      vegetarian: false,
+      vegan: false,
+      dairyFree: false,
+      containsNuts: false,
+      glutenFree: false,
+      kosher: false,
+      halal: false,
+    },
+  });
 
-export default function EditRecipe({currentUserProfile, selectedRecipe, openRecipe}: EditRecipeProps) {
+  const [ingredients, setIngredients] = useState<string[]>([]);
+  const [instructions, setInstructions] = useState<string[]>([]);
 
-    const { currentUser } = useAuth()  
-    const isCurrentUser = currentUser?.uid === currentUserProfile?.uid
+  const isCurrentUser = uid === currentUserProfile?.uid;
 
-    const[ingredients, setIngredients] = useState<string[]>([])
-    const[instructions, setInstructions] = useState<string[]>([])    
+  // Fetch recipe from Firestore
+  useEffect(() => {
+    if (!recipeId) return;
 
-    console.log('rendered')
-    function addIngredient() {
-        setIngredients([...ingredients, ''])
-        console.log(ingredients)
-    }
+    const fetchRecipe = async () => {
+      try {
+        const recipeRef = doc(db, "recipes", recipeId);
+        const snapshot = await getDoc(recipeRef);
 
-    function handleIngredientChange(index: number, value: string) {
-        const newIngredients = [...ingredients]
-        newIngredients[index] = value
-        setIngredients(newIngredients)
-    }
-
-    function addInstruction() {
-        setInstructions([...instructions, ''])
-    }
-
-    function handleInstructionChange(index: number, value: string) {
-        const newInstructions = [...instructions]
-        newInstructions[index] = value
-        setInstructions(newInstructions)
-    }
-
-    //   function handleFormChange(event: ChangeEvent<HTMLInputElement>) {
-    //         const {name, value, type, checked} = event.target
-    //         setRecipeData(prevData => ({
-    //             ...prevData,
-    //             [name]: type === 'checkbox' ? checked : value,
-    //         }))
-    //     }
-
-    function handleFormChange(event: ChangeEvent<HTMLInputElement>) {
-        const {name, value, type, checked} = event.target
-        
-        // List of dietary restriction fields
-        const dietaryFields = ['vegetarian', 'vegan', 'dairyFree', 'containsNuts', 'glutenFree', 'kosher', 'halal']
-        
-        if (dietaryFields.includes(name)) {
-            setRecipeData(prevData => ({
-                ...prevData,
-                dietaryRestrictions: {
-                    ...prevData.dietaryRestrictions,
-                    [name]: checked
-                }
-            }))
-        } else {
-            setRecipeData(prevData => ({
-                ...prevData,
-                [name]: type === 'checkbox' ? checked : value,
-            }))
+        if (snapshot.exists()) {
+          const data = snapshot.data() as Recipe;
+          setRecipeData({
+            ...data,
+            dietaryRestrictions: { ...data.dietaryRestrictions },
+          });
+          setIngredients(data.ingredients || [""]);
+          setInstructions(data.instructions || [""]);
         }
-    }
+      } catch (error) {
+        console.error("Error fetching recipe:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchRecipe();
+  }, [recipeId]);
 
-    const [recipeData, setRecipeData] = useState( {
-        dishName: '',
-        source: '',
-        chef: '',
-        cuisine: '',
-        description: '',
-        prepTime: '',
-        cookTime: '',
-        additionalTime: '',
-        totalTime: '', 
-        servings: '',
-        imageURL: '',
+  const handleUpdateField = (key: keyof Recipe, value: any) => {
+    setRecipeData((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const toggleDiet = (key: keyof Recipe["dietaryRestrictions"]) => {
+    setRecipeData((prev) => ({
+      ...prev,
+      dietaryRestrictions: {
+        ...prev.dietaryRestrictions!,
+        [key]: !prev.dietaryRestrictions![key],
+      },
+    }));
+  };
+
+  const addIngredient = () => setIngredients((prev) => [...prev, ""]);
+  const removeIngredient = (index: number) =>
+    setIngredients((prev) => prev.filter((_, i) => i !== index));
+  const updateIngredient = (index: number, value: string) =>
+    setIngredients((prev) => prev.map((ing, i) => (i === index ? value : ing)));
+
+  const addInstruction = () => setInstructions((prev) => [...prev, ""]);
+  const removeInstruction = (index: number) =>
+    setInstructions((prev) => prev.filter((_, i) => i !== index));
+  const updateInstruction = (index: number, value: string) =>
+    setInstructions((prev) => prev.map((ins, i) => (i === index ? value : ins)));
+
+  const handleSave = async () => {
+    if (!isCurrentUser || !recipeId) return;
+
+    try {
+      const updatedData: Record<string, any> = {
+        ...recipeData,
         ingredients,
         instructions,
-        notes: '',
-        dietaryRestrictions: {
-            vegetarian: false,
-            vegan: false,
-            dairyFree: false,
-            containsNuts: false,
-            glutenFree: false,
-            kosher: false,
-            halal: false,
-        },
-    })
+        dietaryRestrictions: { ...recipeData.dietaryRestrictions },
+        updatedAt: Date.now(),
+      };
 
-    useEffect(() => {
-    if (selectedRecipe) {
-        setIngredients(selectedRecipe.ingredients ?? [])
-        setInstructions(selectedRecipe.instructions ?? [])
-    }   
-        if(currentUserProfile) {
-            setRecipeData({
-                dishName: selectedRecipe.dishName ?? '',
-                source: selectedRecipe.source ?? '',
-                chef: selectedRecipe.chef ?? '',
-                cuisine: selectedRecipe.cuisine ?? '',
-                description: selectedRecipe.description ?? '',
-                prepTime: selectedRecipe.prepTime ?? '',
-                cookTime: selectedRecipe.cookTime ?? '',
-                additionalTime: selectedRecipe.additionalTime ?? '',
-                totalTime: selectedRecipe.totalTime ?? '',
-                servings: selectedRecipe.servings ?? '',
-                imageURL: selectedRecipe.imageURL ?? '',
-                ingredients: selectedRecipe.ingredients,
-                instructions: selectedRecipe.instructions,
-                notes: selectedRecipe.notes ?? '',
-                dietaryRestrictions: {
-                    vegetarian: selectedRecipe.dietaryRestrictions.vegetarian,
-                    vegan: selectedRecipe.dietaryRestrictions.vegan,
-                    dairyFree: selectedRecipe.dietaryRestrictions.dairyFree,
-                    containsNuts: selectedRecipe.dietaryRestrictions.containsNuts,
-                    glutenFree: selectedRecipe.dietaryRestrictions.glutenFree,
-                    kosher: selectedRecipe.dietaryRestrictions.kosher,
-                    halal: selectedRecipe.dietaryRestrictions.halal,
-                },
-            })
-        }
-    }, [selectedRecipe])
+      const recipeRef = doc(db, "recipes", recipeId);
+      await updateDoc(recipeRef, updatedData);
 
-    async function handleUpdateRecipe(event: React.FormEvent<HTMLFormElement>) {
-        event.preventDefault()
-        if (!currentUser || !isCurrentUser) return;
-
-        try {
-            const recipeRef = await doc(db, 'recipes', selectedRecipe.id)
-            await updateDoc(recipeRef, {
-                dishName: recipeData.dishName,
-                source: recipeData.source ,
-                chef: recipeData.chef ,
-                cuisine: recipeData.cuisine ,
-                description: recipeData.description ,
-                prepTime: recipeData.prepTime ,
-                cookTime: recipeData.cookTime ,
-                additionalTime: recipeData.additionalTime ,
-                totalTime: recipeData.totalTime ,
-                servings: recipeData.servings ,
-                imageURL: recipeData.imageURL ,
-                ingredients: ingredients,
-                instructions: instructions,
-                notes: recipeData.notes,
-                dietaryRestrictions: {
-                    vegetarian: recipeData.dietaryRestrictions.vegetarian,
-                    vegan: recipeData.dietaryRestrictions.vegan,
-                    dairyFree: recipeData.dietaryRestrictions.dairyFree,
-                    containsNuts: recipeData.dietaryRestrictions.containsNuts,
-                    glutenFree: recipeData.dietaryRestrictions.glutenFree,
-                    kosher: recipeData.dietaryRestrictions.kosher,
-                    halal: recipeData.dietaryRestrictions.halal,
-                },
-                createdByDisplayName: currentUserProfile?.displayName,
-                updatedAt: Date.now()
-                
-            } )
-
-            // setIngredients([])
-            // setInstructions([])
-            openRecipe(selectedRecipe)
-            
-        } catch (error) {
-            console.error('there was an error saving the updates', error)
-        }
-
+      router.back(); // go back to previous screen
+    } catch (error) {
+      console.error("Error updating recipe:", error);
     }
+  };
 
-    function handleKeyDown(event: React.KeyboardEvent<HTMLFormElement>) {
-        if (event.key === "Enter" && (event.currentTarget as HTMLElement).tagName !== 'TEXTAREA') {
-            event.preventDefault()
-        }
-    }
-
-
+  if (loading) {
     return (
-        <>
-       
-        <section className='p-10' >
-            <br />
-            <form onSubmit={handleUpdateRecipe} onKeyDown={handleKeyDown} className="font-bold" method="POST">
-            <h2>Edit your recipe:</h2>
-                <div className="p-3">
-                    <label> Dish Name:
-                        <input id="dishName" type="text" name="dishName" value={recipeData.dishName}
-              onChange={handleFormChange} required />
-                    </label>
-                    <br />
-                </div>
+      <View className="flex-1 justify-center items-center">
+        <Text className="text-white text-xl">Loading recipe...</Text>
+      </View>
+    );
+  }
 
-                <div className="p-3">
-                    <label> Source:
-                    <input id="source" type="text" name="source" value={recipeData.source}
-              onChange={handleFormChange} />
-                </label>
-                <br />
-                </div>
+  if (!isCurrentUser) {
+    return (
+      <View className="flex-1 justify-center items-center">
+        <Text className="text-white text-xl">You cannot edit this recipe.</Text>
+      </View>
+    );
+  }
 
-                <div className="p-3">
-                    <label> Chef's Name:
-                    <input id="chef" type="text" name="chef" value={recipeData.chef}
-              onChange={handleFormChange} />
-                </label>
-                <br />
-                </div>
+  return (
+    <KeyboardAwareScrollView className="p-4 bg-lime-800">
+      <Text className="text-2xl font-bold mb-4 text-white">Edit Recipe</Text>
 
-                <div className="p-3">
-                    <label> Cuisine
-                    <input id="cuisine" type="text" name="cuisine" value={recipeData.cuisine}
-              onChange={handleFormChange} />
-                </label>
-                <br />
-                </div>
+      {/* Dish Name */}
+      <Text className="text-white">Dish Name:</Text>
+      <TextInput
+        value={recipeData.dishName}
+        onChangeText={(text) => handleUpdateField("dishName", text)}
+        placeholder="Dish Name"
+        placeholderTextColor="#888"
+        className="border p-2 mb-2 bg-white rounded"
+      />
 
-                <div className="p-3">
-                    <label> Description:
-                    <input id="description" type="text" name="description" value={recipeData.description}
-              onChange={handleFormChange} />
-                </label>
-                <br />
-                </div>
+      {/* Source */}
+      <Text className="text-white">Source:</Text>
+      <TextInput
+        value={recipeData.source}
+        onChangeText={(text) => handleUpdateField("source", text)}
+        placeholder="Source"
+        placeholderTextColor="#888"
+        className="border p-2 mb-2 bg-white rounded"
+      />
 
-                <div className="p-3">
-                    <label> Prep Time:
-                    <input id="preptime" type="number" name="preptime"  value={recipeData.prepTime}
-              onChange={handleFormChange} />minutes
-                </label>
-                <br />
-                </div>
+      {/* Ingredients */}
+      <Text className="text-white mt-2">Ingredients:</Text>
+      {ingredients.map((ing, i) => (
+        <View key={i} className="flex-row items-center mb-2">
+          <TextInput
+            value={ing}
+            onChangeText={(text) => updateIngredient(i, text)}
+            placeholder={`Ingredient ${i + 1}`}
+            placeholderTextColor="#888"
+            className="flex-1 border p-2 bg-white rounded"
+          />
+          <TouchableOpacity
+            onPress={() => removeIngredient(i)}
+            className="ml-2 bg-red-500 rounded p-2"
+          >
+            <Text className="text-white font-bold">✕</Text>
+          </TouchableOpacity>
+        </View>
+      ))}
+      <Button title="+ Add Ingredient" onPress={addIngredient} />
 
-                <div className="p-3">
-                    <label> Cook Time:
-                    <input id="cooktime" type="number" name="cooktime" value={recipeData.cookTime}
-              onChange={handleFormChange} />minutes
-                </label>
-                <br />
-                </div>
+      {/* Instructions */}
+      <Text className="text-white mt-2">Instructions:</Text>
+      {instructions.map((ins, i) => (
+        <View key={i} className="flex-row items-center mb-2">
+          <TextInput
+            value={ins}
+            onChangeText={(text) => updateInstruction(i, text)}
+            placeholder={`Step ${i + 1}`}
+            placeholderTextColor="#888"
+            className="flex-1 border p-2 bg-white rounded"
+          />
+          <TouchableOpacity
+            onPress={() => removeInstruction(i)}
+            className="ml-2 bg-red-500 rounded p-2"
+          >
+            <Text className="text-white font-bold">✕</Text>
+          </TouchableOpacity>
+        </View>
+      ))}
+      <Button title="+ Add Step" onPress={addInstruction} />
 
-                <div className="p-3">
-                    <label> Additional Time:
-                    <input id="additionaltime" type="number" name="additionaltime" value={recipeData.additionalTime}
-              onChange={handleFormChange} />minutes
-                </label>
-                <br />
-                </div>
+      {/* Dietary Restrictions */}
+      <Text className="text-white mt-4">Dietary Restrictions:</Text>
+      {Object.keys(recipeData.dietaryRestrictions!).map((key) => (
+        <View key={key} className="flex-row items-center mb-2">
+          <Text className="mr-2 text-white capitalize">{key}</Text>
+          <Switch
+            value={recipeData.dietaryRestrictions![key as keyof Recipe["dietaryRestrictions"]]}
+            onValueChange={() => toggleDiet(key as keyof Recipe["dietaryRestrictions"])}
+          />
+        </View>
+      ))}
 
-                <div className="p-3">
-                    <label> Total Time:
-                    <input id="totaltime" type="number" name="totaltime" value={recipeData.totalTime}
-              onChange={handleFormChange}  />minutes
-                </label>
-                <br />
-                </div>
-
-                <div className="p-3">
-                    <label> Servings:
-                    <input id="servings" type="text" name="servings" value={recipeData.servings}
-              onChange={handleFormChange} />servings
-                </label>
-                <br />
-                </div>
-                <div>
-                    <h3>Ingredients</h3>
-                    <ul>
-                    {ingredients.map((ingredient, i) => (
-                        <li key={i}>
-                        <input
-                            type="text"
-                            value={ingredient}
-                            onChange={(e) => handleIngredientChange(i, e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                e.preventDefault()
-                                addIngredient()
-                                }
-                            }}
-                            placeholder={`Ingredient ${i + 1}`}
-                        />
-                        </li>
-                    ))}
-                    </ul>
-                    <button type="button" onClick={addIngredient}>
-                    + Add another ingredient
-                    </button>
-                </div>
-
-                <br />
-
-                <div>
-                    <h3>Instructions</h3>
-                    
-                    <ol>
-                    {instructions.map((step, i) => (
-                        <li key={i}>
-                        <input
-                            type="text"
-                            value={step}
-                            onChange={(e) => handleInstructionChange(i, e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                e.preventDefault()
-                                addInstruction()
-                                }
-                            }}
-                            placeholder={`Step ${i + 1}`}
-                        />
-                        </li>
-                    ))}
-                    </ol>
-
-                    <button type="button" onClick={addInstruction}>
-                    + Add another step
-                    </button>
-
-                </div>
-                <br />
-
-                <div className="p-3">
-                    <label> Additional Notes:
-                    <input id="notes" type="text" name="notes" value={recipeData.notes}
-              onChange={handleFormChange} />
-                </label>
-                <br />
-                </div>
-
-                <div className="p-3">
-                    <label> Image:
-                    <input id="dishName" type="text" name="dishName" value={recipeData.imageURL}
-              onChange={handleFormChange}  />
-                </label>
-
-                            </div>
-
-                <br />
-                <div className="flex-row">
-                Dietary Notes:
-                    <div className="flex-row pl-10">
-                        <p>Vegetarian <input id="vegetarian" type="checkbox" name="vegetarian" defaultChecked={selectedRecipe.dietaryRestrictions.vegetarian}
-              onChange={handleFormChange} /> </p>
-                        <p>Vegan <input id="vegan" type="checkbox" name="vegan" defaultChecked={selectedRecipe.dietaryRestrictions.vegan}
-              onChange={handleFormChange} /> </p>
-                        <p>Dairy-free <input id="diaryFree" type="checkbox" name="diaryFree" defaultChecked={selectedRecipe.dietaryRestrictions.dairyFree}
-              onChange={handleFormChange} /> </p>
-                        <p>Contains Nuts <input id="containsNuts" type="checkbox" name="containsNuts" defaultChecked={selectedRecipe.dietaryRestrictions.containsNuts}
-              onChange={handleFormChange} /> </p>
-                        <p>Gluten-free <input id="glutenFree" type="checkbox" name="glutenFree" defaultChecked={selectedRecipe.dietaryRestrictions.glutenFree}
-              onChange={handleFormChange} /> </p>
-                        <p>Kosher <input id="kosher" type="checkbox" name="kosher" defaultChecked={selectedRecipe.dietaryRestrictions.kosher}
-              onChange={handleFormChange} /> </p>
-                        <p>Halal <input id="halal" type="checkbox" name="halal" defaultChecked={selectedRecipe.dietaryRestrictions.halal}
-              onChange={handleFormChange} /> </p>
-                    </div>
-                </div>
-                <br /> 
-
-                <button className='p-2 rounded text-white bg-blue-500' type="submit">Save Changes</button>
-                {/* <p className='text-red' >{showMissingInfo ? "Some information may be missing" : ""}</p> */}
-            </form>
-        </section>
-        </>
-    )
+      {/* Submit */}
+      <View className="p-6 pb-12">
+        <TouchableOpacity
+          onPress={handleSave}
+          className="mt-6 bg-blue-500 p-3 rounded-xl items-center"
+        >
+          <Text className="text-white font-bold text-lg">Save Changes</Text>
+        </TouchableOpacity>
+      </View>
+    </KeyboardAwareScrollView>
+  );
 }

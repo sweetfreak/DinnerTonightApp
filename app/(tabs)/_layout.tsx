@@ -1,5 +1,6 @@
 // app/(tabs)/_layout.tsx
 import { Tabs } from "expo-router";
+import {View} from 'react-native'
 import { Ionicons } from "@expo/vector-icons";
 import { useUserProfile } from "../../contexts/UserProfileContext";
 
@@ -8,11 +9,14 @@ export default function TabsLayout() {
       const { currentUserProfile } = useUserProfile();
       
   return (
-
+<View className='flex-1 bg-lime-200'>
     <Tabs
       screenOptions={{
-        headerShown: true,
-        tabBarActiveTintColor: "limegreen",
+        headerShown: false,
+        tabBarActiveTintColor: "white",
+        tabBarActiveBackgroundColor: 'seagreen',
+        tabBarInactiveBackgroundColor: 'yellowgreen',
+        tabBarInactiveTintColor: 'green'
       }}
     >
       <Tabs.Screen
@@ -44,5 +48,6 @@ export default function TabsLayout() {
         }}
       />
     </Tabs>
+    </View>
   );
 }
