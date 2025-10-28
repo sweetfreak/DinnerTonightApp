@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { View, Text, TextInput, ScrollView, Button, Switch, TouchableOpacity } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+
 import { db } from "../../firebase/firebaseConfig";
 import { collection, addDoc, updateDoc, doc, arrayUnion } from "firebase/firestore";
 import { useAuth } from "../../contexts/authContext/index";
@@ -18,7 +20,7 @@ interface NewRecipeProps {
 export default function NewRecipe({  }: NewRecipeProps) {
   
  const { currentUserProfile } = useUserProfile();
-
+const router = useRouter();
   const [recipe, setRecipe] = useState<Partial<Recipe>>({
     dishName: "",
     source: "",
@@ -120,31 +122,32 @@ export default function NewRecipe({  }: NewRecipeProps) {
       await updateDoc(userRef, { myRecipes: arrayUnion(recipeRef.id) });
 
       setSubmittedRecipe(true);
-      setRecipe({
-        dishName: "",
-        source: "",
-        chef: "",
-        cuisine: "",
-        description: "",
-        prepTime: "",
-        cookTime: "",
-        additionalTime: "",
-        totalTime: "",
-        servings: "",
-        imageURL: "",
-        ingredients: [""],
-        instructions: [""],
-        notes: "",
-        dietaryRestrictions: {
-          vegetarian: false,
-          vegan: false,
-          dairyFree: false,
-          containsNuts: false,
-          glutenFree: false,
-          kosher: false,
-          halal: false,
-        },
-      });
+      router.back();
+      // setRecipe({
+      //   dishName: "",
+      //   source: "",
+      //   chef: "",
+      //   cuisine: "",
+      //   description: "",
+      //   prepTime: "",
+      //   cookTime: "",
+      //   additionalTime: "",
+      //   totalTime: "",
+      //   servings: "",
+      //   imageURL: "",
+      //   ingredients: [""],
+      //   instructions: [""],
+      //   notes: "",
+      //   dietaryRestrictions: {
+      //     vegetarian: false,
+      //     vegan: false,
+      //     dairyFree: false,
+      //     containsNuts: false,
+      //     glutenFree: false,
+      //     kosher: false,
+      //     halal: false,
+      //   },
+      // });
     } catch (error) {
       console.error("Error adding recipe:", error);
     }
@@ -155,12 +158,7 @@ export default function NewRecipe({  }: NewRecipeProps) {
   return (
     <KeyboardAwareScrollView className="p-4 bg-lime-800">
       
-      {submittedRecipe ? (
-        <View>
-          <Text className="text-xl font-bold mb-2">Recipe Submitted!</Text>
-          <Button title="Make a New Recipe" onPress={resetNewRecipe} />
-        </View>
-      ) : (
+     
         <View>
           <Text className="text-2xl font-bold mb-4 text-white">Add a New Recipe!</Text>
 
@@ -348,7 +346,7 @@ export default function NewRecipe({  }: NewRecipeProps) {
             </TouchableOpacity>
           </View>
         </View>
-      )}
+      
     </KeyboardAwareScrollView>
   );
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { View, Text, TextInput, Button, Switch, TouchableOpacity } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../../firebase/firebaseConfig";
 import { useUserProfile } from "../../contexts/UserProfileContext";
 import type Recipe from "../../types/Recipe";
@@ -87,6 +87,7 @@ export default function EditRecipe() {
   };
 
   const addIngredient = () => setIngredients((prev) => [...prev, ""]);
+
   const removeIngredient = (index: number) =>
     setIngredients((prev) => prev.filter((_, i) => i !== index));
   const updateIngredient = (index: number, value: string) =>
@@ -113,11 +114,22 @@ export default function EditRecipe() {
       const recipeRef = doc(db, "recipes", recipeId);
       await updateDoc(recipeRef, updatedData);
 
-      router.back(); // go back to previous screen
+      router.back();
     } catch (error) {
       console.error("Error updating recipe:", error);
     }
   };
+
+  const handleDelete = async () =>  {
+    try {
+    await deleteDoc(doc(db, "recipes", recipeId))
+    router.back();
+    setTimeout(() => router.back(), 25);
+    } catch (error) {
+        console.error('Could not delete:', error)
+    }
+  }
+
 
   if (loading) {
     return (
@@ -222,6 +234,17 @@ export default function EditRecipe() {
           <Text className="text-white font-bold text-lg">Save Changes</Text>
         </TouchableOpacity>
       </View>
+
+
+        <View className="p-6 pb-12">
+            <TouchableOpacity
+            onPress={handleDelete}
+            className="mt-6 bg-red-500 p-3 rounded-xl items-center"
+            >
+            <Text className="text-white font-bold text-lg">DELETE RECIPE</Text>
+            </TouchableOpacity>
+        </View>
+      
     </KeyboardAwareScrollView>
   );
 }

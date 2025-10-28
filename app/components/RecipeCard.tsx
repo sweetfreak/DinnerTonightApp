@@ -34,7 +34,7 @@ export default function RecipeCard({ recipe, isFavorite, toggleFavorite }: Recip
             
             <View>
                 <View className="flex-row items-center">
-                <Link href={{ pathname:"./FullRecipe", params: {recipeId: recipe.id }}}  >
+                <Link href={{ pathname:"../components/FullRecipe", params: {recipeId: recipe.id }}}  >
                     <Text className="text-4xl font-bold text-blue-800 font-underline">{recipe.dishName}</Text>
                 </Link>
 

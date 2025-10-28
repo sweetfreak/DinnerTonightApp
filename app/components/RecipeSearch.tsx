@@ -1,37 +1,91 @@
-import { useState, useEffect } from "react";
-import { collection, getDocs } from "firebase/firestore";
+
+import { useEffect, useState } from "react";
+import { View, Text, ScrollView, TextInput, Pressable } from "react-native";
+import {Link} from 'expo-router'
+import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
 import { db } from "../../firebase/firebaseConfig";
-import RecipeCard from "./RecipeCard";
-import type  Recipe  from "../../types/Recipe";
-import useFavorites from "../../hooks/useFavorites";
-
-import {Text, View, ScrollView} from 'react-native'
-import { Link } from "expo-router";
 import { useUserProfile } from "../../contexts/UserProfileContext";
+import useFavorites from "../../hooks/useFavorites";
+import RecipeCard from "./RecipeCard";
+import type Recipe  from "../../types/Recipe";
 
-export default function RecipeSearch() {
+export default function Recipes() {
+  const { currentUserProfile } = useUserProfile();
+  const { favorites, toggleFavorite, loading } = useFavorites(currentUserProfile?.savedRecipes);
+
   const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
-  const { favorites, toggleFavorite } = useFavorites(); // ✅ Add this
-  
+  const [filterType, setFilterType] = useState<"all" | "mine" | "saved">("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // 🔥 Realtime listener for all recipes
   useEffect(() => {
-    async function fetchAllRecipes() {
-      const querySnapshot = await getDocs(collection(db, "recipes"));
-      const allFetchedRecipes = querySnapshot.docs.map((doc) => ({
-        ...(doc.data() as Recipe),
+    const q = query(collection(db, "recipes"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetched = snapshot.docs.map((doc) => ({
         id: doc.id,
-      }));
-      setAllRecipes(allFetchedRecipes);
+        ...doc.data(),
+      })) as Recipe[];
+      setAllRecipes(fetched);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  if (loading) return <Text>Loading...</Text>;
+
+  // 🧮 Apply filters
+  const filtered = allRecipes.filter((recipe) => {
+    const matchesSearch = recipe.dishName?.toLowerCase().includes(searchQuery.toLowerCase());
+    if (!matchesSearch) return false;
+
+    if (filterType === "mine") {
+      return currentUserProfile?.myRecipes?.includes(recipe.id);
     }
-    fetchAllRecipes();
-  }, []); // ✅ dependency should be [], not [allRecipes]
+    if (filterType === "saved") {
+      return currentUserProfile?.savedRecipes?.includes(recipe.id);
+    }
+    return true; // all
+  });
 
   return (
-    <ScrollView className="flex-1 bg-lime-200  ">
-      <Text className="text-2xl font-bold self-center p-10">
-        Search All Recipes
-      </Text>
-      {allRecipes.length > 0 ? (
-        allRecipes.map((dish) => (
+    <ScrollView className="flex-1 bg-lime-200 px-4">
+      {/* Header */}
+      <View className="pt-10 pb-4">
+        <Text className="text-3xl font-bold text-center">Recipes</Text>
+      </View>
+
+    <Link href="../../components/NewRecipe" className="p-5 font-bold">
+        <Text>Add a New Recipe</Text>
+    </Link>
+
+      {/* Filter buttons */}
+      <View className="flex-row justify-center gap-4 mb-4">
+        {["all", "mine", "saved"].map((type) => (
+          <Pressable
+            key={type}
+            onPress={() => setFilterType(type as any)}
+            className={`px-4 py-2 rounded-full ${
+              filterType === type ? "bg-green-600" : "bg-green-300"
+            }`}
+          >
+            <Text className="text-white capitalize">{type}</Text>
+          </Pressable>
+        ))}
+        
+      </View>
+
+      {/* Search bar */}
+      <TextInput
+        placeholder="Search recipes..."
+        placeholderTextColor='gray'
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        className="bg-white rounded-xl p-3 mb-4 text-lg "
+      />
+
+      {/* Recipe list */}
+      {filtered.length > 0 ? (
+        filtered.map((dish) => (
           <RecipeCard
             key={dish.id}
             recipe={dish}
@@ -40,7 +94,7 @@ export default function RecipeSearch() {
           />
         ))
       ) : (
-        <Text>No recipes</Text>
+        <Text className="text-center text-gray-600">No recipes found</Text>
       )}
     </ScrollView>
   );
