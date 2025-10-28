@@ -8,7 +8,5 @@ export default function Index() {
   if (currentUser) {
     // Send authenticated users straight into the tab layout
     return <Redirect href="/(tabs)/profile" />;
-  }
-
-  return <SignInOptions />;
+  } else return <SignInOptions />;
 }

@@ -79,7 +79,7 @@ useEffect(() => {
                 <Text>Chef: {recipe?.chef}</Text>
 
                 <Link
-                    href={{pathname: '../UserProfileComponents/UserProfilePage', params: {id: recipe?.createdBy }}}
+                    href={{pathname: './UserProfilePage', params: {id: recipe?.createdBy }}}
                 >
                 Uploaded by: {recipe?.createdByDisplayName}
                 </Link>
@@ -135,4 +135,5 @@ useEffect(() => {
             </View>
         </ScrollView>
     )
+    
 }

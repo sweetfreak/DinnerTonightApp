@@ -11,8 +11,8 @@ import ChatPage from "./app/(tabs)/chat/components/ChatPage";
 import RecipeSearch from "./app/components/RecipeSearch";
 import MyRecipes from "./app/components/MyRecipes";
 import FullRecipe from "./app/components/FullRecipe";
-import UserProfilePage from "./app/(tabs)/profiles/components/UserProfilePage";
-import EditProfile from "./app/(tabs)/profiles/components/EditProfile";
+import UserProfilePage from "./app/(tabs)/profile/components/UserProfilePage";
+import EditProfile from "./app/(tabs)/profile/components/EditProfile";
 import EditRecipe from "./app/components/EditRecipe";
 
 

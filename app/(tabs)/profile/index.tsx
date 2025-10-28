@@ -1,5 +1,4 @@
 import { View, Text, Button } from "react-native";
-import { doSignOut } from '../../../firebase/auth'
 import { useUserProfile } from "../../../contexts/UserProfileContext";
 import UserProfilePage from "@/app/components/UserProfilePage";
 
@@ -13,11 +12,6 @@ export default function ProfileScreen() {
       <UserProfilePage 
         myId={currentUserProfile?.uid} 
       />
-
-       <Button
-          title="Sign Out"
-          onPress={doSignOut}
-          />
           
     </View>
 

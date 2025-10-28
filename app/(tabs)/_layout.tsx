@@ -6,15 +6,17 @@ import { useUserProfile } from "../../contexts/UserProfileContext";
 
 export default function TabsLayout() {
       const { currentUserProfile } = useUserProfile();
+      
   return (
+
     <Tabs
       screenOptions={{
-        headerShown: false,
+        headerShown: true,
         tabBarActiveTintColor: "limegreen",
       }}
     >
       <Tabs.Screen
-        name="recipes"
+        name="recipes/index"
         options={{
           title: "Recipes",
           tabBarIcon: ({ color, size }) => (
@@ -23,7 +25,7 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="chat"
+        name="chat/index"
         options={{
           title: "Chats",
           tabBarIcon: ({ color, size }) => (
@@ -32,7 +34,7 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="profile/index"
         initialParams={{id: currentUserProfile?.uid}}
         options={{
           title: "Profile",

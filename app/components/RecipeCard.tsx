@@ -32,7 +32,7 @@ export default function RecipeCard({ recipe, isFavorite, toggleFavorite }: Recip
             </View>
             
             <View>
-                <Link href={{ pathname:"./FullRecipe", params: {recipeId: recipe.id }}}  >
+                <Link href={{ pathname:"./", params: {recipeId: recipe.id }}}  >
                     <Text className="text-4xl font-bold text-blue-800 font-underline">{recipe.dishName}</Text>
                 </Link>
                 <Text>Chef: {recipe.chef}</Text>

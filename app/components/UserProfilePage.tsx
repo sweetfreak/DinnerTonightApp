@@ -2,6 +2,8 @@ import { useState, useEffect } from "react"
 import { useAuth } from "../../contexts/authContext"
 import { doc, getDoc } from "firebase/firestore"
 import { db } from "../../firebase/firebaseConfig"
+// import { doSignOut } from '../../firebase/auth'
+import SignOutButton from "./SignOutButton"
 
 import useFavorites from "../../hooks/useFavorites"
 import { sendFriendRequest, acceptFriendRequest, declineFriendRequest } from "../../services/friendRequests"
@@ -37,74 +39,6 @@ const id = myId && myId !== "" ? myId : params.id;
 
 
 
-  // useEffect(() => {
-  //   async function fetchProfile() {
-  //     try {
-  //       if (id === currentUserProfile?.uid && currentUserProfile) {
-  //         setProfile(currentUserProfile)
-  //       } 
-
-  //       const docRef = doc(db, "users", id)
-  //       const docSnap = await getDoc(docRef)
-
-  //       if (!docSnap.exists()) {
-  //         console.log("No user found for ID:", id)
-  //         setProfile(null)
-  //         // setIsCurrentUser(false)
-  //         return
-  //       }
-
-  //       setProfile({
-  //         uid: docSnap.id,
-  //         email: docSnap.data().email,
-  //         displayName: docSnap.data().displayName,
-  //         photoURL: docSnap.data().photoURL,
-  //         bio: docSnap.data().bio,
-  //         favoriteCuisine: docSnap.data().favoriteCuisine,
-  //         savedRecipes: docSnap.data().savedRecipes,
-  //         myRecipes: docSnap.data().myRecipes,
-  //         friends: docSnap.data().friends,
-  //         friendRequestsReceived: docSnap.data().friendRequestsReceived,
-  //         friendRequestsSent: docSnap.data().friendRequestsSent,
-  //         chatGroupIds: docSnap.data().chatGroupIds
-  //       })
-
-  //     } catch (error) {
-  //       console.error("Error fetching user profile:", error)
-  //     }
-  //   }
-  //   fetchProfile()
-      
-  //   }, [id, currentUserProfile, currentUserProfile, isCurrentUser])
-
-// useEffect(() => {
-//     async function fetchRecipes() {
-//       if (!id) {
-//         console.warn("fetchProfile called with undefined id");
-//         return;
-//       }
-//       if (!profile?.myRecipes?.length) {
-//         setRecipes([])
-//         return
-//       }
-
-//       try {
-//         const recipePromises = profile.savedRecipes.map(async (recipeId: string) => {
-//           const recipeRef = doc(db, "recipes", recipeId)
-//           const recipeSnap = await getDoc(recipeRef)
-//           if (!recipeSnap.exists()) return null
-//           return { id: recipeSnap.id, ...recipeSnap.data() } as Recipe
-//         })
-
-//         const fetched = (await Promise.all(recipePromises)).filter(Boolean) as Recipe[]
-//         setRecipes(fetched)
-//       } catch (error) {
-//         console.error("Error loading recipes:", error)
-//       }
-//     }
-
-//     fetchRecipes()
-//   }, [profile?.savedRecipes])
 useEffect(() => {
   async function fetchProfile() {
     try {
@@ -222,6 +156,7 @@ useEffect(() => {
             className="p-1 m-4 place-content-center rounded text-white bg-blue-500 hover:font-bold">
               Edit Profile
           </Link>}
+          <SignOutButton/>
         {!isCurrentUser && (
             <>
               {isFriend ? (
