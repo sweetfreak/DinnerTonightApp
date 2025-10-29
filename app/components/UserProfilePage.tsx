@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react"
+import {  useState, useEffect } from "react"
 import { useAuth } from "../../contexts/authContext"
-import { doc, getDoc } from "firebase/firestore"
+import { doc, getDoc} from "firebase/firestore"
 import { db } from "../../firebase/firebaseConfig"
 // import { doSignOut } from '../../firebase/auth'
 import SignOutButton from "./SignOutButton"
@@ -142,21 +142,25 @@ useEffect(() => {
 
   return (
     <ScrollView className='flex-col bg-lime-100 '>
-      <View className="flex place-content-center" > 
+      <View className="flex self-center" > 
         <View className="flex flex-col m-8">
         {/* IMAGE + BUTTON */}
         <Image 
-            source={require("../../assets/tempPic.jpg") } 
-            className="flex w-48 h-48 object-cover rounded-full "
-            resizeMode="cover"
+           source={{uri: currentUserProfile?.photoURL ?? ''}} 
+          className="flex w-48 h-48 object-cover rounded-full "
+          resizeMode="cover"
         />  
         {isCurrentUser && 
+        <View>
           <Link 
-            href= './EditProfile'
-            className="p-1 m-4 place-content-center rounded text-white bg-blue-500 hover:font-bold">
+            href= '../../components/EditProfile'
+            className="p-1 m-4 rounded text-white bg-blue-500 self-center">
               Edit Profile
-          </Link>}
+          </Link>
           <SignOutButton/>
+          </View>
+          }
+          
         {!isCurrentUser && (
             <>
               {isFriend ? (
@@ -195,12 +199,9 @@ useEffect(() => {
         </View>
 
         {/* WELCOME */}
-        <View className='place-content-center font-bold text-4xl'>
-          {isCurrentUser ? (
-          <Text>Welcome, {profile?.displayName ?? "..."}!</Text>
-            ) : (
-          <Text>Chef {profile?.displayName ?? "..."}</Text>
-            )}
+        <View className='font-bold'>
+          
+          <Text className='text-3xl' > {isCurrentUser ? `Welcome, ${profile?.displayName ?? "..."}!` : `Chef ${profile?.displayName}`}</Text>
         </View>
       </View>
 

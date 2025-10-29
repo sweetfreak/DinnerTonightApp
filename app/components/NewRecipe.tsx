@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, TextInput, ScrollView, Button, Switch, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, Image, ScrollView, Button, Switch, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { db } from "../../firebase/firebaseConfig";
@@ -10,6 +10,8 @@ import type Recipe from "../../types/Recipe";
 import { useUserProfile } from "../../contexts/UserProfileContext";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 
+import * as ImagePicker from 'expo-image-picker'
+import { getStorage, ref, uploadBytes, getDownloadURL} from 'firebase/storage';
 
 
 interface NewRecipeProps {
@@ -21,6 +23,12 @@ export default function NewRecipe({  }: NewRecipeProps) {
   
  const { currentUserProfile } = useUserProfile();
 const router = useRouter();
+
+//let newDownloadURL = ''
+//const [uploading, setUploading] = useState(false)
+const [localImageUri, setLocalImageUri] = useState<string | null>(null);
+//const [imageURL, setImageURL] = useState<string | null>()
+
   const [recipe, setRecipe] = useState<Partial<Recipe>>({
     dishName: "",
     source: "",
@@ -47,7 +55,7 @@ const router = useRouter();
     },
   });
 
-  const [submittedRecipe, setSubmittedRecipe] = useState(false);
+  //const [submittedRecipe, setSubmittedRecipe] = useState(false);
 
   const updateField = (key: keyof Recipe, value: any) => {
     setRecipe(prev => ({ ...prev, [key]: value }));
@@ -98,10 +106,19 @@ const router = useRouter();
 
   const handleSubmit = async () => {
     if (!currentUserProfile) return;
+    if (!recipe.dishName) return alert("Please enter a dish name");
 
     try {
+
+      let uploadedImageURL = ''
+
+      if (localImageUri) {
+        uploadedImageURL = await uploadImageToFirebase(localImageUri, `images/${Date.now()}.jpg`)
+      }
+
       const newRecipe: Recipe = {
         ...(recipe as Recipe), // Type assertion since all fields are optional in state
+        imageURL: uploadedImageURL,
         createdBy: currentUserProfile?.uid ?? currentUserProfile.uid,
         createdByDisplayName: currentUserProfile?.displayName ?? currentUserProfile.displayName ?? "",
         createdAt: new Date().toISOString(),
@@ -114,46 +131,63 @@ const router = useRouter();
       const recipeRef = await addDoc(collection(db, "recipes"), newRecipe);
       await updateDoc(recipeRef, { id: recipeRef.id });
 
-      const newRecipeWithId: Recipe = { ...newRecipe, id: recipeRef.id };
+      //const newRecipeWithId: Recipe = { ...newRecipe, id: recipeRef.id };
       //setMyRecipes(prev => [...prev, newRecipeWithId]);
 
       // Optionally update user's recipe list
       const userRef = doc(db, "users", currentUserProfile.uid);
       await updateDoc(userRef, { myRecipes: arrayUnion(recipeRef.id) });
 
-      setSubmittedRecipe(true);
+      //setSubmittedRecipe(true);
       router.back();
-      // setRecipe({
-      //   dishName: "",
-      //   source: "",
-      //   chef: "",
-      //   cuisine: "",
-      //   description: "",
-      //   prepTime: "",
-      //   cookTime: "",
-      //   additionalTime: "",
-      //   totalTime: "",
-      //   servings: "",
-      //   imageURL: "",
-      //   ingredients: [""],
-      //   instructions: [""],
-      //   notes: "",
-      //   dietaryRestrictions: {
-      //     vegetarian: false,
-      //     vegan: false,
-      //     dairyFree: false,
-      //     containsNuts: false,
-      //     glutenFree: false,
-      //     kosher: false,
-      //     halal: false,
-      //   },
-      // });
+
     } catch (error) {
       console.error("Error adding recipe:", error);
     }
   };
 
-  const resetNewRecipe = () => setSubmittedRecipe(false);
+  //const resetNewRecipe = () => setSubmittedRecipe(false);
+
+
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      //aspect: [4, 3],
+      quality: 1
+    })
+
+    if (!result.canceled) {
+      return setLocalImageUri(result.assets[0].uri)
+    }
+    return null
+  }
+
+  const uriToBlob = async (uri: string) => {
+    const response = await fetch(uri)
+    const blob = await response.blob()
+    return blob
+  }
+
+  const uploadImageToFirebase = async (imageUri: string, storagePath: string) => {
+      const blob = await uriToBlob(imageUri)
+      const storage = getStorage()
+      const storageRef = ref(storage, storagePath)
+
+      try {
+        await uploadBytes(storageRef, blob)
+        const downloadURL = await getDownloadURL(storageRef)
+        console.log("image uplaoded successfully! DownloadURL: ", downloadURL)
+        return downloadURL
+      } catch (error) {
+        console.error("error uploading image: ", error)
+        throw error
+      }
+  }
+
+  const handleUploadImage = async () => {
+    const imageUri = await pickImage()
+  }
 
   return (
     <KeyboardAwareScrollView className="p-4 bg-lime-800">
@@ -173,7 +207,7 @@ const router = useRouter();
           />
 
           {/* Source */}
-          <Text className="text-white">Source (URL or cookbook):</Text>
+          <Text className="text-white">Source (URL):</Text>
           <TextInput
             value={recipe.source}
             onChangeText={text => updateField("source", text)}
@@ -262,14 +296,28 @@ const router = useRouter();
           />
 
           {/* Image URL */}
-          <Text className="text-white">Image URL:</Text>
-          <TextInput
-            value={recipe.imageURL}
-            onChangeText={text => updateField("imageURL", text)}
-            placeholder="Paste an image URL"
-            placeholderTextColor="#888"
-            className="border p-2 mb-2 bg-white rounded"
+          <Text className="text-white">Image:</Text>
+          <Button 
+            title="Upload Image"
+            onPress={handleUploadImage}
           />
+
+          { localImageUri ? (
+            <Text className="text-white mt-2">✅ Image uploaded!</Text>
+          ) : null}
+
+          {localImageUri && (<View>
+          <Image source={{ uri: localImageUri }} className="w-32 h-32 rounded mt-2"  />
+          
+            <Button
+            title="Clear Image"
+            onPress={() => {
+              setLocalImageUri('')
+            }}
+            />
+
+          </View>)}
+  
 
           {/* Ingredients */}
           <Text className="text-white mt-2">Ingredients:</Text>

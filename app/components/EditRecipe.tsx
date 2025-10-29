@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, Text, TextInput, Button, Switch, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, Image, Button, Switch, TouchableOpacity } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../../firebase/firebaseConfig";
@@ -7,10 +7,17 @@ import { useUserProfile } from "../../contexts/UserProfileContext";
 import type Recipe from "../../types/Recipe";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
+import * as ImagePicker from 'expo-image-picker'
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject, FirebaseStorage} from 'firebase/storage';
+
 export default function EditRecipe() {
   const router = useRouter();
   const { currentUserProfile } = useUserProfile();
   const { uid, recipeId } = useLocalSearchParams<{ uid: string; recipeId: string }>();
+
+  const [localImageUri, setLocalImageUri] = useState<string | null>(null);
+
+
 
   const [loading, setLoading] = useState(true);
   const [recipeData, setRecipeData] = useState<Partial<Recipe>>({
@@ -90,12 +97,15 @@ export default function EditRecipe() {
 
   const removeIngredient = (index: number) =>
     setIngredients((prev) => prev.filter((_, i) => i !== index));
+  
   const updateIngredient = (index: number, value: string) =>
     setIngredients((prev) => prev.map((ing, i) => (i === index ? value : ing)));
 
   const addInstruction = () => setInstructions((prev) => [...prev, ""]);
+
   const removeInstruction = (index: number) =>
     setInstructions((prev) => prev.filter((_, i) => i !== index));
+
   const updateInstruction = (index: number, value: string) =>
     setInstructions((prev) => prev.map((ins, i) => (i === index ? value : ins)));
 
@@ -103,8 +113,20 @@ export default function EditRecipe() {
     if (!isCurrentUser || !recipeId) return;
 
     try {
+
+       let uploadedImageURL = ''
+
+   
+
+      if (localImageUri) {
+        uploadedImageURL = await uploadImageToFirebase(localImageUri, `recipeimages/${Date.now()}.jpg`, recipeData.imageURL)
+      }
+
+      
+
       const updatedData: Record<string, any> = {
         ...recipeData,
+        imageURL: uploadedImageURL || recipeData.imageURL,
         ingredients,
         instructions,
         dietaryRestrictions: { ...recipeData.dietaryRestrictions },
@@ -120,16 +142,90 @@ export default function EditRecipe() {
     }
   };
 
-  const handleDelete = async () =>  {
-    try {
-    await deleteDoc(doc(db, "recipes", recipeId))
+  const handleDelete = async () => {
+
+
+  try {
+    const storage = getStorage();
+
+    if (recipeData?.imageURL && recipeData.imageURL.includes("firebasestorage.googleapis.com")) {
+      await deleteOldImage(storage, recipeData.imageURL);
+    }
+
+    await deleteDoc(doc(db, "recipes", recipeId));
     router.back();
     setTimeout(() => router.back(), 25);
-    } catch (error) {
-        console.error('Could not delete:', error)
-    }
-  }
 
+  } catch (error) {
+    console.error("Could not delete recipe:", error);
+  }
+};
+
+
+  const pickImage = async () => {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        //aspect: [4, 3],
+        quality: 1
+      })
+  
+      if (!result.canceled) {
+        return setLocalImageUri(result.assets[0].uri)
+      }
+      return null
+    }
+  
+    const uriToBlob = async (uri: string) => {
+      const response = await fetch(uri)
+      const blob = await response.blob()
+      return blob
+    }
+
+  async function deleteOldImage(storage: FirebaseStorage, oldImageUrl?: string) {
+  if (!oldImageUrl || !oldImageUrl.includes("firebasestorage.googleapis.com")) return;
+
+  try {
+    // Extract the file path from the download URL
+    const decodedPath = decodeURIComponent(
+      oldImageUrl.split("/o/")[1].split("?")[0]
+    ); // e.g. "images%2FoldFile.jpg" → "images/oldFile.jpg"
+
+    const oldRef = ref(storage, decodedPath);
+    console.log("Deleting image at path:", oldImageUrl);
+    await deleteObject(oldRef);
+
+    console.log("🗑️ Old image deleted:", decodedPath);
+  } catch (deleteError) {
+    console.warn("⚠️ Could not delete old image:", deleteError);
+  }
+}
+
+
+const uploadImageToFirebase = async (imageUri: string, storagePath: string, oldImageUrl?: string) => {
+  const blob = await uriToBlob(imageUri);
+  const storage = getStorage();
+  const storageRef = ref(storage, storagePath);
+
+  try {
+    await uploadBytes(storageRef, blob);
+    const downloadURL = await getDownloadURL(storageRef);
+    console.log("✅ Image uploaded successfully:", downloadURL);
+
+    // Delete old image AFTER upload succeeds
+    await deleteOldImage(storage, oldImageUrl);
+
+    return downloadURL;
+  } catch (error) {
+    console.error("❌ Error uploading image:", error);
+    throw error;
+  }
+};
+   
+    
+ const handleSelectImage = async () => {
+    const imageUri = await pickImage()
+  }
 
   if (loading) {
     return (
@@ -147,6 +243,8 @@ export default function EditRecipe() {
     );
   }
 
+  
+
   return (
     <KeyboardAwareScrollView className="p-4 bg-lime-800">
       <Text className="text-2xl font-bold mb-4 text-white">Edit Recipe</Text>
@@ -162,7 +260,7 @@ export default function EditRecipe() {
       />
 
       {/* Source */}
-      <Text className="text-white">Source:</Text>
+      <Text className="text-white">Source (URL):</Text>
       <TextInput
         value={recipeData.source}
         onChangeText={(text) => handleUpdateField("source", text)}
@@ -171,7 +269,121 @@ export default function EditRecipe() {
         className="border p-2 mb-2 bg-white rounded"
       />
 
-      {/* Ingredients */}
+      {/* chef */}
+      <Text className="text-white">Chef:</Text>
+      <TextInput
+        value={recipeData.chef}
+        onChangeText={(text) => handleUpdateField("chef", text)}
+        placeholder="Chef"
+        placeholderTextColor="#888"
+        className="border p-2 mb-2 bg-white rounded"
+      />
+
+      {/* cuisine */}
+      <Text className="text-white">Cuisine:</Text>
+      <TextInput
+        value={recipeData.cuisine}
+        onChangeText={(text) => handleUpdateField("cuisine", text)}
+        placeholder="Cuisine"
+        placeholderTextColor="#888"
+        className="border p-2 mb-2 bg-white rounded"
+      />
+
+      {/* Description */}
+      <Text className="text-white">Description</Text>
+      <TextInput
+        value={recipeData.description}
+        onChangeText={(text) => handleUpdateField("description", text)}
+        placeholder="Description"
+        placeholderTextColor="#888"
+        className="border p-2 mb-2 bg-white rounded"
+      />
+
+      {/* prep Time */}
+      <Text className="text-white">Prep Time:</Text>
+      <TextInput
+        value={recipeData.prepTime}
+        onChangeText={(text) => handleUpdateField("prepTime", text)}
+        placeholder="Prep Time"
+        placeholderTextColor="#888"
+        className="border p-2 mb-2 bg-white rounded"
+      />
+
+      {/* cook Time */}
+      <Text className="text-white">Cook Time:</Text>
+      <TextInput
+        value={recipeData.cookTime}
+        onChangeText={(text) => handleUpdateField("cookTime", text)}
+        placeholder="Cook Time"
+        placeholderTextColor="#888"
+        className="border p-2 mb-2 bg-white rounded"
+      />
+
+      {/* Additional Time */}
+      <Text className="text-white">Additional Time:</Text>
+      <TextInput
+        value={recipeData.additionalTime}
+        onChangeText={(text) => handleUpdateField("additionalTime", text)}
+        placeholder="Additional Time"
+        placeholderTextColor="#888"
+        className="border p-2 mb-2 bg-white rounded"
+      />
+
+      {/* Total Time */}
+      <Text className="text-white">Total Time:</Text>
+      <TextInput
+        value={recipeData.totalTime}
+        onChangeText={(text) => handleUpdateField("totalTime", text)}
+        placeholder="Total Time"
+        placeholderTextColor="#888"
+        className="border p-2 mb-2 bg-white rounded"
+      />
+
+      {/* Servings */}
+      <Text className="text-white">servings:</Text>
+      <TextInput
+        value={recipeData.servings}
+        onChangeText={(text) => handleUpdateField("servings", text)}
+        placeholder="servings"
+        placeholderTextColor="#888"
+        className="border p-2 mb-2 bg-white rounded"
+      />
+
+      {/* image url */}
+      <Text className="text-white">Image:</Text>
+
+              {!localImageUri && recipeData?.imageURL ? 
+                <Image source={{uri: recipeData.imageURL}} 
+                  className="w-48 h-48 rounded-lg"
+                  resizeMode="cover" 
+                /> : null  }
+                 
+
+                <Button 
+                  title="Upload Image"
+                  onPress={handleSelectImage}/>
+      
+                { localImageUri ? (
+                  <Text className="text-white mt-2">✅ Image uploaded!</Text>
+                ) : null}
+      
+             
+
+                {localImageUri && (<View>
+                  <Image source={{ uri: localImageUri }} className="w-32 h-32 rounded mt-2"  />
+                  <Button
+                    title="Clear Image"
+                    onPress={() => {
+                      setLocalImageUri('')
+                    }}
+                    />
+
+                </View>)}
+
+
+      
+
+       {/* Ingredients */}
       <Text className="text-white mt-2">Ingredients:</Text>
       {ingredients.map((ing, i) => (
         <View key={i} className="flex-row items-center mb-2">
@@ -213,6 +425,16 @@ export default function EditRecipe() {
       ))}
       <Button title="+ Add Step" onPress={addInstruction} />
 
+        {/* Notes */}
+      <Text className="text-white">Additional Notes:</Text>
+      <TextInput
+        value={recipeData.notes}
+        onChangeText={(text) => handleUpdateField("notes", text)}
+        placeholder="Add additional notes about the dish here"
+        placeholderTextColor="#888"
+        className="border p-2 mb-2 bg-white rounded"
+      />
+
       {/* Dietary Restrictions */}
       <Text className="text-white mt-4">Dietary Restrictions:</Text>
       {Object.keys(recipeData.dietaryRestrictions!).map((key) => (
@@ -224,6 +446,8 @@ export default function EditRecipe() {
           />
         </View>
       ))}
+
+     
 
       {/* Submit */}
       <View className="p-6 pb-12">

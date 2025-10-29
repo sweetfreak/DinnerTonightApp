@@ -25,7 +25,7 @@ export default function RecipeCard({ recipe, isFavorite, toggleFavorite }: Recip
         <View className="flex w-120 h-auto bg-lime-100 rounded-lg p-4 border-8 border-lime-700">
             <View className="flex p-5">
                 <Image 
-                    source={require("../../assets/macncheese.png") } 
+                    source={recipe.imageURL ? {uri: recipe.imageURL} : require("../../assets/macncheese.png") } 
                     className="w-full h-48 object-cover rounded-t-lg"
                     resizeMode="cover"
                 />  
@@ -47,14 +47,14 @@ export default function RecipeCard({ recipe, isFavorite, toggleFavorite }: Recip
                 </TouchableOpacity>
                 </View>
 
-                {recipe?.source && <View className="flex-row"><Text className="font-bold">Source: </Text><Text>{recipe.source}</Text></View>}
                 {recipe?.chef && <View className="flex-row"><Text className="font-bold">Chef: </Text><Text>{recipe.chef}</Text></View>}
 
                 <View className="flex">
-                    {recipe?.description && <Text className='pt-5 pb-5'>{recipe.description}</Text>}
+                    {recipe?.description && <Text className='pt-5 pb-5 italic'>{recipe.description}</Text>}
                     {recipe?.servings && <View className="flex-row"><Text className="font-bold">Serves: </Text><Text>{recipe.servings} </Text></View>}
                     {recipe?.totalTime && <View className="flex-row"><Text className="font-bold">Total Cook Time: </Text><Text>{recipe.totalTime} minutes</Text></View>}
-                    </View>
+                </View>
+
                     <View>
 
                     <Text className="pt-4 font-bold text-lg">Dietary Restrictions</Text>

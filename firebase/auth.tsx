@@ -1,6 +1,6 @@
 import { auth, db} from "./firebaseConfig"
 import { signInWithEmailAndPassword, type User } from 'firebase/auth';
-import { createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, updatePassword, updateProfile } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, updatePassword, updateProfile, signOut } from "firebase/auth";
 import {doc, setDoc, serverTimestamp} from 'firebase/firestore'
 
  export async function doCreateUserWithEmailAndPassword(email: string, password: string, displayName: string) {
@@ -36,9 +36,13 @@ import {doc, setDoc, serverTimestamp} from 'firebase/firestore'
  }
  //could get google/apple login stuff here too: https://www.youtube.com/watch?v=WpIDez53SK4
 
- export const doSignOut = () => {
-    return auth.signOut()
- }
+export async function doSignOut() {
+  try {
+    await signOut(auth);
+  } catch (error) {
+    console.error("Error signing out:", error);
+  }
+}
 
  export const doPasswordReset = (email: string) => {
     return sendPasswordResetEmail(auth, email)

@@ -7,18 +7,20 @@ import { AuthProvider, useAuth } from "../contexts/authContext";
 import { UserProfileProvider } from "../contexts/UserProfileContext";
 import { ActiveSectionProvider } from "../contexts/ActiveSectionContext";
 import "./global.css";
+import { useRouter } from "expo-router";
+import { useEffect } from "react";
 
 export default function RootLayout() {
   return (
     <>
       <AuthProvider>
-        <SafeAreaProvider>
+    
           <UserProfileProvider>
             <ActiveSectionProvider>
               <AppStack />
             </ActiveSectionProvider>
           </UserProfileProvider>
-        </SafeAreaProvider>
+      
       </AuthProvider>
     </>
   );
@@ -26,6 +28,13 @@ export default function RootLayout() {
 
 function AppStack() {
   const { currentUser } = useAuth();
+  const router = useRouter();
+
+    useEffect(() => {
+    if (!currentUser) {
+      router.replace("/signIn/SignInOptions")
+    } 
+  }, [currentUser]);
 
   return (
     <Stack screenOptions={{ 

@@ -3,6 +3,9 @@ import { Tabs } from "expo-router";
 import {View} from 'react-native'
 import { Ionicons } from "@expo/vector-icons";
 import { useUserProfile } from "../../contexts/UserProfileContext";
+import { useScrollToTop } from '@react-navigation/native';
+import React, { useRef } from 'react';
+
 
 
 export default function TabsLayout() {
@@ -17,7 +20,9 @@ export default function TabsLayout() {
         tabBarActiveBackgroundColor: 'seagreen',
         tabBarInactiveBackgroundColor: 'yellowgreen',
         tabBarInactiveTintColor: 'green'
+        
       }}
+      
     >
       <Tabs.Screen
         name="recipes/index"

@@ -1,115 +1,179 @@
-import { useAuth } from "../../contexts/authContext"
-import {useEffect, useState} from 'react'
-import type {ChangeEvent} from 'react'
-import type UserProfile from "../../types/User"
-import { db} from "../../firebase/firebaseConfig"
-import { collection, addDoc, doc, setDoc, getDoc, updateDoc, arrayUnion, serverTimestamp } from "firebase/firestore";
-
+import { useState, useEffect } from "react";
+import { View, Text, TextInput, Button, Image, TouchableOpacity, ScrollView } from "react-native";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "../../firebase/firebaseConfig";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject, FirebaseStorage } from "firebase/storage";
+import * as ImagePicker from "expo-image-picker";
+import type UserProfile from "../../types/User";
+import { useUserProfile } from "../../contexts/UserProfileContext";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 interface EditProfileProps {
-    currentUserProfile: UserProfile | null
-    openProfile: (id: string) => void;
+  // currentUserProfile: UserProfile | null;
+  // currentUserUid: string;
+  // openProfile: (id: string) => void;
 }
 
+export default function EditProfile() {
 
-export default function EditProfile({currentUserProfile, openProfile}: EditProfileProps) {
+  const { currentUserProfile, setCurrentUserProfile } = useUserProfile();
+const router = useRouter();
 
-  const { currentUser } = useAuth()  
-  const isCurrentUser = currentUser?.uid === currentUserProfile?.uid
 
-  if (!currentUser || !isCurrentUser) return null
+  const [profileData, setProfileData] = useState({
+    displayName: "",
+    photoURL: "",
+    bio: "",
+    favoriteCuisine: "",
+  });
 
-const [profileData, setProfileData] = useState( {
-    displayName: '',
-    photoURL: '',
-    bio: '',
-    favoriteCuisine: ''
-})
+  const [localImageUri, setLocalImageUri] = useState<string | null>(null);
 
-useEffect(() => {
-    if(currentUserProfile) {
-        setProfileData({
-            displayName: currentUserProfile.displayName ?? "",
-            photoURL: currentUserProfile.photoURL ?? "",
-            bio: currentUserProfile.bio ?? "",
-            favoriteCuisine: currentUserProfile.favoriteCuisine ?? ""
-        })
+  useEffect(() => {
+    if (currentUserProfile) {
+      setProfileData({
+        displayName: currentUserProfile.displayName ?? "",
+        photoURL: currentUserProfile.photoURL ?? "",
+        bio: currentUserProfile.bio ?? "",
+        favoriteCuisine: currentUserProfile.favoriteCuisine ?? "",
+      });
     }
-}, [currentUserProfile])
+  }, [currentUserProfile]);
 
-  function handleChange(event: ChangeEvent<HTMLInputElement>) {
-    const {name, value} = event.target
-    setProfileData(prevData => ({
-        ...prevData,
-        [name]: value,
-    }))
-  }
+  const handleChange = (key: keyof typeof profileData, value: string) => {
+    setProfileData(prev => ({ ...prev, [key]: value }));
+  };
 
-    async function handleUpdateProfile(event: React.FormEvent<HTMLFormElement>) {
-        event.preventDefault()
-        if (!currentUser || !isCurrentUser) return;
+  const uriToBlob = async (uri: string) => {
+    const response = await fetch(uri);
+    return await response.blob();
+  };
 
-        try {
-            const userRef = await doc(db, 'users', currentUser.uid)
-            await updateDoc(userRef, {
-                displayName: profileData.displayName,
-                photoURL: profileData.photoURL,
-                bio: profileData.bio,
-                favoriteCuisine: profileData.favoriteCuisine
-            } )
-            openProfile(currentUserProfile?.uid!)
-        } catch (error) {
-            console.error('there was an error saving the updates', error)
-        }
+  const deleteOldImage = async (storage: FirebaseStorage, oldImageUrl?: string) => {
+    if (!oldImageUrl || !oldImageUrl.includes("firebasestorage.googleapis.com")) return;
 
+    try {
+      const decodedPath = decodeURIComponent(oldImageUrl.split("/o/")[1].split("?")[0]);
+      const oldRef = ref(storage, decodedPath);
+      await deleteObject(oldRef);
+      console.log("🗑️ Old profile picture deleted:", decodedPath);
+    } catch (error) {
+      console.warn("⚠️ Could not delete old profile picture:", error);
     }
+  };
 
-    return (
-    <>
-      <div>Edit Profile</div>
-      <form onSubmit={handleUpdateProfile} className="" method="POST">
-        <div className="p-3">
-          <label>Name:
-            <input
-              type="text"
-              name="displayName"
-              value={profileData.displayName}
-              onChange={handleChange} />
-          </label>
-        </div>
+  const uploadImageToFirebase = async (imageUri: string, storagePath: string, oldImageUrl?: string) => {
+    const blob = await uriToBlob(imageUri);
+    const storage = getStorage();
+    const storageRef = ref(storage, storagePath);
 
-        <div className="p-3">
-          <label>Photo URL:
-            <input
-              type="text"
-              name="photoURL"
-              value={profileData.photoURL}
-              onChange={handleChange} />
-          </label>
-        </div>
+    try {
+      await uploadBytes(storageRef, blob);
+      const downloadURL = await getDownloadURL(storageRef);
+      console.log("✅ Profile picture uploaded:", downloadURL);
 
-        <div className="p-3">
-          <label>Bio:
-            <input
-              type="text"
-              name="bio"
-              value={profileData.bio}
-              onChange={handleChange} />
-          </label>
-        </div>
+      if (oldImageUrl) await deleteOldImage(storage, oldImageUrl);
 
-        <div className="p-3">
-          <label>Favorite Cuisine:
-            <input
-              type="text"
-              name="favoriteCuisine"
-              value={profileData.favoriteCuisine}
-              onChange={handleChange} />
-          </label>
-        </div>
+      return downloadURL;
+    } catch (error) {
+      console.error("❌ Error uploading profile picture:", error);
+      throw error;
+    }
+  };
 
-        <button className="m-8 p-1 rounded text-white bg-blue-500" type="submit">Save</button>
-      </form>
-    </>
-  )
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setLocalImageUri(result.assets[0].uri);
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!currentUserProfile?.uid) {
+      console.error("No UID available for current user");
+      return;
+    }
+    try {
+      let uploadedPhotoURL = profileData.photoURL;
+
+      if (localImageUri) {
+        uploadedPhotoURL = await uploadImageToFirebase(
+          localImageUri,
+          `profilePictures/${currentUserProfile?.uid}_${Date.now()}.jpg`,
+          profileData.photoURL
+        );
+      }
+
+      const userRef = doc(db, "users", currentUserProfile.uid);
+      await updateDoc(userRef, {
+        displayName: profileData.displayName,
+        photoURL: uploadedPhotoURL,
+        bio: profileData.bio,
+        favoriteCuisine: profileData.favoriteCuisine,
+      });
+      setCurrentUserProfile(prev => prev ? { ...prev, photoURL: uploadedPhotoURL } : null);
+
+      router.back()
+
+    } catch (error) {
+      console.error("Error updating profile:", error);
+    }
+  };
+
+  return (
+    <ScrollView className="p-4 bg-lime-100 flex-1">
+      <Text className="text-2xl font-bold mb-4">Edit Profile</Text>
+
+      {/* Profile Picture */}
+      <View className="items-center mb-4">
+        <Image
+          source={localImageUri ? { uri: localImageUri } : profileData.photoURL ? { uri: profileData.photoURL } : require("../../assets/tempPic.jpg")}
+          className="w-32 h-32 rounded-full mb-2"
+          resizeMode="cover"
+        />
+        <Button title="Upload Profile Picture" onPress={pickImage} />
+        {localImageUri && <Button title="Clear Image" color="red" onPress={() => setLocalImageUri(null)} />}
+      </View>
+
+      {/* Name */}
+      <View className="mb-4">
+        <Text>Name:</Text>
+        <TextInput
+          value={profileData.displayName}
+          onChangeText={text => handleChange("displayName", text)}
+          placeholder="Name"
+          className="border p-2 rounded bg-white"
+        />
+      </View>
+
+      {/* Bio */}
+      <View className="mb-4">
+        <Text>Bio:</Text>
+        <TextInput
+          value={profileData.bio}
+          onChangeText={text => handleChange("bio", text)}
+          placeholder="Bio"
+          className="border p-2 rounded bg-white"
+        />
+      </View>
+
+      {/* Favorite Cuisine */}
+      <View className="mb-4">
+        <Text>Favorite Cuisine:</Text>
+        <TextInput
+          value={profileData.favoriteCuisine}
+          onChangeText={text => handleChange("favoriteCuisine", text)}
+          placeholder="Favorite Cuisine"
+          className="border p-2 rounded bg-white"
+        />
+      </View>
+
+      <Button title="Save" onPress={handleUpdateProfile} />
+    </ScrollView>
+  );
 }

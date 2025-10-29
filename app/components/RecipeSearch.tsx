@@ -54,13 +54,15 @@ export default function Recipes() {
         <Text className="text-3xl font-bold text-center">Recipes</Text>
       </View>
 
-    <Link href="../../components/NewRecipe" className="p-5 font-bold">
-        <Text>Add a New Recipe</Text>
-    </Link>
+    <View className="self-center bg-green-600 rounded-full px-4 py-2 mb-4"  >
+      <Link href="../../components/NewRecipe" className="p-2 ">
+          <Text className="text-white">Add a New Recipe</Text>
+      </Link>
+    </View>
 
       {/* Filter buttons */}
       <View className="flex-row justify-center gap-4 mb-4">
-        {["all", "mine", "saved"].map((type) => (
+        {["all", "mine", "Favs"].map((type) => (
           <Pressable
             key={type}
             onPress={() => setFilterType(type as any)}
@@ -84,18 +86,24 @@ export default function Recipes() {
       />
 
       {/* Recipe list */}
+      
       {filtered.length > 0 ? (
-        filtered.map((dish) => (
+        filtered.map((dish, index) => (
+          <View key={index} className="mb-2">
           <RecipeCard
             key={dish.id}
             recipe={dish}
             isFavorite={favorites.includes(dish.id)}
             toggleFavorite={() => toggleFavorite(dish.id)}
           />
+          </View>
         ))
+
       ) : (
         <Text className="text-center text-gray-600">No recipes found</Text>
       )}
+    
+
     </ScrollView>
   );
 }
