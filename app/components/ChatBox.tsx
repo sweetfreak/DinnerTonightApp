@@ -1,6 +1,6 @@
 import {useAuth} from "../../contexts/authContext/index"
 import {useState, useEffect, useRef} from 'react'
-import { doc, getDoc, getDocs, addDoc, updateDoc, collection, query, where, onSnapshot, orderBy, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, getDocs, addDoc, documentId, updateDoc, collection, query, where, onSnapshot, orderBy, serverTimestamp } from "firebase/firestore";
 import { db } from "../../firebase/firebaseConfig";
 import type UserProfile from '../../types/User'
 import type Recipe from '../../types/Recipe'
@@ -11,10 +11,6 @@ import { Link } from 'expo-router'
 import { useUserProfile } from "../../contexts/UserProfileContext";
 
 interface ChatProps {
-    // id: string;
-    // participants: string[];
-    // updatedAt: Date
-    // lastMessageID: string;
 
     chat: Chat | null
     
@@ -86,6 +82,32 @@ useEffect(() => {
   };
 }, [chat!.id]);
 
+async function handleSendRecipe(recipe: Recipe) {
+  if (!chat || !currentUserProfile) return;
+
+  try {
+    const messagesRef = collection(db, "chats", chat.id, "messages");
+    const chatRef = doc(db, "chats", chat.id);
+
+    const newMessageRef = await addDoc(messagesRef, {
+      type: "recipe",
+      recipeId: recipe.id,
+      recipeTitle: recipe.dishName,
+      senderId: currentUserProfile.uid,
+      createdAt: serverTimestamp(),
+    });
+
+    await updateDoc(chatRef, {
+      latestMessageID: newMessageRef.id,
+      latestMessageSenderID: currentUserProfile.uid,
+      updatedAt: serverTimestamp(),
+    });
+
+    setShowRecipes(false);
+  } catch (err) {
+    console.error("Error sending recipe:", err);
+  }
+}
 
   // submit message and update chat
   async function handleSubmit() {
@@ -119,33 +141,30 @@ useEffect(() => {
 
 
 useEffect(() => {
-  if (!showRecipes || !currentUserProfile?.uid) return;
+  if (!showRecipes || !currentUserProfile?.savedRecipes?.length) return;
 
-  async function fetchRecipes() {
+  async function fetchSavedRecipes() {
     try {
       const q = query(
         collection(db, "recipes"),
-        where("createdBy", "==", currentUserProfile?.uid) // or "authorId"
+        where(documentId(), "in", currentUserProfile?.savedRecipes)
       );
       const snapshot = await getDocs(q);
 
-      const fetched = snapshot.docs.map((docSnap) => {
-        const data = docSnap.data() as Recipe;
-        return {
-          ...data,       // spread first
-          id: docSnap.id // then add id last so it’s not overwritten
-        };
-      });
+      const fetched = snapshot.docs.map((docSnap) => ({
+        ...(docSnap.data() as Recipe),
+        id: docSnap.id,
+      }));
 
       setSavedRecipes(fetched);
     } catch (err) {
-      console.error("Error fetching recipes:", err);
+      console.error("Error fetching saved recipes:", err);
       setSavedRecipes([]);
     }
   }
 
-  fetchRecipes();
-}, [showRecipes, currentUserProfile?.uid]);
+  fetchSavedRecipes();
+}, [showRecipes, currentUserProfile?.savedRecipes]);
 
   return (
     <View className='flex-1 '>
@@ -157,24 +176,33 @@ useEffect(() => {
       >
         
           {messages.map((msg) => (
-            <View
-            key={msg.id}
-            >
-            <Text
-              
-              className={`p-2 rounded mb-2  ${
-                msg.senderId === currentUserProfile?.uid
-                  ? "bg-blue-200 self-end"
-                  : "bg-gray-200 self-start"
-              }`}
-            >
-              <Text className="font-bold"> 
-                {msg.senderId == currentUserProfile?.uid ? currentUserProfile.displayName : friendName }:  
-              </Text> 
-            {msg.text}
-            </Text>
-            </View>
-          ))}
+  <View key={msg.id}>
+    {msg.type === "recipe" ? (
+      <TouchableOpacity
+        className={`p-3 m-1 rounded-xl ${
+          msg.senderId === currentUserProfile?.uid ? "bg-blue-200 self-end" : "bg-green-200 self-start"
+        }`}
+      >
+        <Text className="font-bold">{msg.text}</Text>
+        <Text className="text-xs text-gray-600">(Tap to view)</Text>
+      </TouchableOpacity>
+    ) : (
+      <Text
+        className={`p-2 rounded mb-2 ${
+          msg.senderId === currentUserProfile?.uid ? "bg-blue-200 self-end" : "bg-gray-200 self-start"
+        }`}
+      >
+        <Text className="font-bold">
+          {msg.senderId == currentUserProfile?.uid
+            ? currentUserProfile.displayName
+            : friendName}
+          :
+        </Text>{" "}
+        {msg.text}
+      </Text>
+    )}
+  </View>
+))}
         
       </ScrollView>
         
@@ -199,6 +227,22 @@ useEffect(() => {
             <Text className="text-white">Send</Text>
           </TouchableOpacity>
         </View>
+
+        {showRecipes && (
+          <ScrollView className="max-h-60 bg-white rounded-lg mt-2 p-2">
+            {savedRecipes.map((recipe) => (
+              <TouchableOpacity
+                key={recipe.id}
+                className="border-b border-gray-200 p-2"
+                onPress={() => handleSendRecipe(recipe)}
+              >
+                <Text className="font-bold">{recipe.dishName}</Text>
+                <Text numberOfLines={1}>{recipe.description}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
+
         </View>
       
     

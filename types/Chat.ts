@@ -1,16 +1,17 @@
 export default interface Chat {
-  id: string;
-  participants: string[];
+  id: string
+  participants: string[]
   participantProfiles?: {uid: string, displayName: string}[]
-  latestMessageText: string;
-  latestMessageSenderID: string;
-  updatedAt: Date;
+  latestMessageText: string
+  latestMessageSenderID: string
+  updatedAt: Date
   messages: Message[]
 }
 
 export interface Message {
-  id: string;
-  senderId: string;
-  text: string;
-  createdAt: Date;
+  id: string
+  senderId: string
+  text: string
+  createdAt: Date
+  type: string
 }

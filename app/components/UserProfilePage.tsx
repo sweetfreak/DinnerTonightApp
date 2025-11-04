@@ -127,7 +127,7 @@ export default function UserProfilePage() {
       <View className="self-center">
         <Image
           source={{ uri: profile?.photoURL || "" }}
-          className="flex self-center w-48 h-48 object-cover rounded-full"
+          className="flex self-center w-48 h-48 mt-4 object-cover rounded-full"
           resizeMode="cover"
         />
 
