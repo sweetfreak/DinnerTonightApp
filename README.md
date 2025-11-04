@@ -1,8 +1,25 @@
 # Dinner Tonight?
 
+<img width="300" height="650" alt="IMG_3570" src="https://github.com/user-attachments/assets/2d201788-4f49-4f86-96f5-2cde0a86611b" />
+
 Tired of losing track of the recipes you sent to friends over Instagram? Or was it text? Or TikTok? Dinner Tonight fixes that by giving you a single location to save and organize your recipes, as well as share them with friends.
 
 This is an (in-production) recipe saving and sharing app created with React Native and Expo.
+
+# Features
+
+(Note: all UI and features are currently in development)
+
+- Save Recipes
+<img width="300" height="650" alt="IMG_3571" src="https://github.com/user-attachments/assets/d7b00dcc-089c-488a-a355-03561c9d0562" />
+
+- Search the app and add favorite recipes
+<img width="300" height="650" alt="IMG_3564" src="https://github.com/user-attachments/assets/63963f78-dc90-4719-baee-bd790bb66ae7" />
+
+- Chat with friends and send them recipes 
+<img width="300" height="650" alt="IMG_3566" src="https://github.com/user-attachments/assets/7438a06c-d7f1-4f23-b6a8-32c52cac7f8d" />
+
+
 
 ## Built With
 - React Native
