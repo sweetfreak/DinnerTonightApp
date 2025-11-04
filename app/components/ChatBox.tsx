@@ -39,16 +39,13 @@ const screenHeight = Dimensions.get('window').height;
 const inputAreaHeight = 100; // adjust based on styling
 const scrollHeight = screenHeight - inputAreaHeight;
 
-const updateMessage = (value: string) => {
-  setNewMessage(value);
-};
 
- // 🟩 SCROLL TO BOTTOM FUNCTION
+ // scroll to bottom
   const scrollToBottom = () => {
     scrollViewRef.current?.scrollToEnd({ animated: true });
   };
 
-  // 🟩 SCROLL WHEN MESSAGES CHANGE
+  // scroll to bottom whenever a new message is sent (regardless of user?)
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -58,9 +55,11 @@ const updateMessage = (value: string) => {
 useEffect(() => {
   if (!chat) return;
 
+  //get messages from chat
   const messagesRef = collection(db, "chats", chat.id, "messages");
   const q = query(messagesRef, orderBy("createdAt", "asc"));
 
+  // create snapshot for instant messaging
   const unsubscribe = onSnapshot(q, (snapshot) => {
     const chatMessages: Message[] = snapshot.docs.map((thisDoc) => ({
       id: thisDoc.id,
@@ -69,16 +68,18 @@ useEffect(() => {
     setMessages(chatMessages);
   });
 
+  //create chat ref
   const chatRef = doc(db, "chats", chat.id);
   const unsubscribeChat = onSnapshot(chatRef, (chatSnap) => {
+
+      //unused??
     if (chatSnap.exists()) {
       const updatedChat = chatSnap.data();
-      // Optionally, trigger a UI update or state update here if needed
-      // e.g. setChat({ ...chat, lastMessageID: updatedChat.lastMessageID });
+   
     }
   });
 
-  // 🟩 update cleanup return
+  // update cleanup return
   return () => {
     unsubscribe();
     unsubscribeChat();
@@ -86,8 +87,9 @@ useEffect(() => {
 }, [chat!.id]);
 
 
-  // 🟩 CHANGED SECTION in handleSubmit()
+  // submit message and update chat
   async function handleSubmit() {
+    //prevent empty messages and no user
     if (!newMessage.trim() || !currentUserProfile) return;
 
     try {
@@ -100,9 +102,10 @@ useEffect(() => {
         createdAt: serverTimestamp(),
       });
 
-      // 🟩 NEW: update parent chat document
+      // update chat file
       
       await updateDoc(chatRef, {
+        latestMessageID: newMessageRef.id,
         latestMessageText: newMessage,
         latestMessageSenderID: currentUserProfile.uid,
         updatedAt: serverTimestamp(),

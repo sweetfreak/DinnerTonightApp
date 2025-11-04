@@ -1,6 +1,6 @@
 import {Text, View, Button, KeyboardAvoidingView, Platform, TouchableOpacity} from 'react-native'
 import {useEffect, useState} from 'react'
-import { doc, getDoc, getDocs, addDoc, collection, query, where, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, getDocs, addDoc, collection, orderBy, onSnapshot, query, where, serverTimestamp } from "firebase/firestore";
 import { db } from "../../firebase/firebaseConfig";
 import type UserProfile  from '../../types/User'
 import type Chat from '../../types/Chat'
@@ -20,59 +20,103 @@ export default function ChatsPage({currentUserProfile, friends} : ChatsPageProps
     const [activeChat, setActiveChat] = useState<Chat | null>(null)
     const [showChat, setShowChat] = useState(false)
 
-// 🟩 ADDED
-    useEffect(() => {
-    if (!currentUserProfile) return;
 
-    async function fetchChats() {
-        try {
-        const q = query(collection(db, "chats"), where("participants", "array-contains", currentUserProfile?.uid));
-        const snapshot = await getDocs(q);
+    // useEffect(() => {
+    // if (!currentUserProfile) return;
 
-        const fetchedChats: Chat[] = await Promise.all(snapshot.docs.map(async (docSnap) => {
-            const data = docSnap.data();
+    // async function fetchChats() {
+    //     try {
+    //     const q = query(collection(db, "chats"), where("participants", "array-contains", currentUserProfile?.uid));
+    //     const snapshot = await getDocs(q);
 
-            // Get participant display names
-            const participantProfiles = await Promise.all(
-            data.participants.map(async (uid: string) => {
-                const userRef = doc(db, "users", uid);
-                const userSnap = await getDoc(userRef);
-                return userSnap.exists()
-                ? { uid, displayName: userSnap.data().displayName }
-                : { uid, displayName: "UnknownUser" };
-            })
-            );
+    //     const fetchedChats: Chat[] = await Promise.all(snapshot.docs.map(async (docSnap) => {
+    //         const data = docSnap.data();
 
-            // Fetch last message (if it exists)
-            let latestMessageText = "";
-            if (data.lastMessageID) {
-            const messageRef = doc(db, "chats", docSnap.id, "messages", data.lastMessageID);
-            const messageSnap = await getDoc(messageRef);
-            if (messageSnap.exists()) {
-                latestMessageText = messageSnap.data().text || "";
-            }
-            }
+    //         // Get participant display names
+    //         const participantProfiles = await Promise.all(
+    //         data.participants.map(async (uid: string) => {
+    //             const userRef = doc(db, "users", uid);
+    //             const userSnap = await getDoc(userRef);
+    //             return userSnap.exists()
+    //             ? { uid, displayName: userSnap.data().displayName }
+    //             : { uid, displayName: "UnknownUser" };
+    //         })
+    //         );
 
-            return {
-            id: docSnap.id,
-            participants: data.participants,
-            participantProfiles,
-            latestMessageText,
-            latestMessageSenderID: data.latestMessageSenderID || "",
-            updatedAt: data.updatedAt?.toDate?.() || new Date(),
-            messages: [],
+    //         // Fetch last message (if it exists)
+    //         let latestMessageText = "";
+    //         if (data.latestMessageID) {
+    //         const messageRef = doc(db, "chats", docSnap.id, "messages", data.latestMessageID);
+    //         const messageSnap = await getDoc(messageRef);
+    //         if (messageSnap.exists()) {
+    //             latestMessageText = messageSnap.data().text || "";
+    //         }
+    //         }
+
+    //         return {
+    //         id: docSnap.id,
+    //         participants: data.participants,
+    //         participantProfiles,
+    //         latestMessageText,
+    //         latestMessageSenderID: data.latestMessageSenderID || "",
+    //         updatedAt: data.updatedAt?.toDate?.() || new Date(),
+    //         messages: [],
             
-            } as Chat & { latestMessageText?: string };
-        }));
+    //         } as Chat & { latestMessageText?: string };
+    //     }));
 
-        setAllChats(fetchedChats);
-        } catch (error) {
-        console.error("Error fetching chats:", error);
-        }
-    }
+    //     setAllChats(fetchedChats);
+    //     } catch (error) {
+    //     console.error("Error fetching chats:", error);
+    //     }
+    // }
 
-    fetchChats();
-    }, [currentUserProfile]);
+    // fetchChats();
+    // }, [currentUserProfile]);
+
+    useEffect(() => {
+  if (!currentUserProfile) return;
+
+  const q = query(
+    collection(db, "chats"),
+    where("participants", "array-contains", currentUserProfile.uid),
+    orderBy("updatedAt", "desc")
+  );
+
+  // Listen for real-time chat updates
+  const unsubscribe = onSnapshot(q, async (snapshot) => {
+    const fetchedChats: Chat[] = await Promise.all(
+      snapshot.docs.map(async (docSnap) => {
+        const data = docSnap.data();
+
+        // Load participant display names
+        const participantProfiles = await Promise.all(
+          data.participants.map(async (uid: string) => {
+            const userRef = doc(db, "users", uid);
+            const userSnap = await getDoc(userRef);
+            return userSnap.exists()
+              ? { uid, displayName: userSnap.data().displayName }
+              : { uid, displayName: "UnknownUser" };
+          })
+        );
+
+        return {
+          id: docSnap.id,
+          participants: data.participants,
+          participantProfiles,
+          latestMessageText: data.latestMessageText || "",
+          latestMessageSenderID: data.latestMessageSenderID || "",
+          updatedAt: data.updatedAt?.toDate?.() || new Date(),
+          messages: [],
+        } as Chat;
+      })
+    );
+
+    setAllChats(fetchedChats);
+  });
+
+  return () => unsubscribe();
+}, [currentUserProfile]);
 
     async function getOrCreateChat(currentUid: string, friendUid: string) {
         const chatsRef = collection(db, "chats")
@@ -92,7 +136,7 @@ export default function ChatsPage({currentUserProfile, friends} : ChatsPageProps
 
         const newChatRef = await addDoc(chatsRef, {
             participants: [currentUid, friendUid],
-            lastMessage: "",
+            latestMessage: "",
             updatedAt: serverTimestamp()
         })
         chatDoc = await getDoc(newChatRef)

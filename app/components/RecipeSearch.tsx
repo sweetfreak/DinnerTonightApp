@@ -14,10 +14,10 @@ export default function Recipes() {
   const { favorites, toggleFavorite, loading } = useFavorites(currentUserProfile?.savedRecipes);
 
   const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
-  const [filterType, setFilterType] = useState<"all" | "mine" | "saved">("all");
+  const [filterType, setFilterType] = useState<"all" | "mine" | "favs">("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // 🔥 Realtime listener for all recipes
+  // listener for all recipes
   useEffect(() => {
     const q = query(collection(db, "recipes"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -33,7 +33,7 @@ export default function Recipes() {
 
   if (loading) return <Text>Loading...</Text>;
 
-  // 🧮 Apply filters
+  // search filter
   const filtered = allRecipes.filter((recipe) => {
     const matchesSearch = recipe.dishName?.toLowerCase().includes(searchQuery.toLowerCase());
     if (!matchesSearch) return false;
@@ -41,7 +41,7 @@ export default function Recipes() {
     if (filterType === "mine") {
       return currentUserProfile?.myRecipes?.includes(recipe.id);
     }
-    if (filterType === "saved") {
+    if (filterType === "favs") {
       return currentUserProfile?.savedRecipes?.includes(recipe.id);
     }
     return true; // all
@@ -62,7 +62,7 @@ export default function Recipes() {
 
       {/* Filter buttons */}
       <View className="flex-row justify-center gap-4 mb-4">
-        {["all", "mine", "Favs"].map((type) => (
+        {["all", "mine", "favs"].map((type) => (
           <Pressable
             key={type}
             onPress={() => setFilterType(type as any)}

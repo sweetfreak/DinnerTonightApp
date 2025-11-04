@@ -12,6 +12,7 @@ import {Text, View, ScrollView, KeyboardAvoidingView, Button, Platform, Touchabl
 import { useUserProfile } from "../../contexts/UserProfileContext";
 
 import  useActiveSection  from "../../contexts/ActiveSectionContext";
+import FriendSearch from './FriendSearch';
 
 
 
@@ -94,6 +95,7 @@ const [friends, setFriends] = useState<(UserProfile[])>([])
 
                     <View className="flex-1">
                         {activeSection === "friend list"  && <FriendList friends={friends}/> }
+                        {activeSection === "search"  && <FriendSearch />}
                         {activeSection === "chats"  && <ChatsPage 
                             currentUserProfile= {currentUserProfile}
                             friends={friends}
