@@ -25,7 +25,7 @@ export default function RecipeCard({ recipe, isFavorite, toggleFavorite }: Recip
         <View className="flex w-120 h-auto bg-lime-100 rounded-lg p-4 border-8 border-lime-700">
             <View className="flex p-5">
                 <Image 
-                    source={recipe.imageURL ? {uri: recipe.imageURL} : require("../../assets/macncheese.png") } 
+                    source={recipe.imageURL ? {uri: recipe.imageURL} : require("../../assets/placeholder.jpg") } 
                     className="w-full h-48 object-cover rounded-t-lg"
                     resizeMode="cover"
                 />  

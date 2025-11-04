@@ -70,7 +70,7 @@ useEffect(() => {
                     source={
                     recipe?.imageURL 
                         ? { uri: recipe.imageURL } 
-                        : require("../../assets/macncheese.png")
+                        : require("../../assets/placeholder.jpg")
                     }
                     className="w-full h-48 rounded-lg border-lime-800 border-4"
                     resizeMode="cover"  // ✅ this replaces object-cover
@@ -113,8 +113,8 @@ useEffect(() => {
 
 
                 {recipe?.description && <View className="pt-4 pb-4">
-                    <Text className="font-bold text-lg">Description:</Text>
-                    <Text className="text-lg">{recipe?.description}</Text>
+                    <Text className="font-bold text-lg text-center">Description:</Text>
+                    <Text className="text-lg text-center">{recipe?.description}</Text>
                 </View>}
 
                 {(recipe?.cookTime || recipe?.prepTime || recipe?.additionalTime || recipe?.totalTime) && <View className=" p-4 border">
@@ -126,7 +126,9 @@ useEffect(() => {
 
                 </View>}
 
-                
+                 
+                <View className="border-b-2 border-lime-800 w-full my-4" />
+               
 
                 {/* ✅ Ingredients FlatList */}
                 {recipe?.ingredients && 
@@ -147,9 +149,11 @@ useEffect(() => {
                 
                 </View>}
 
+                <View className="border-b-2 border-lime-800 w-full my-4" />
+
                 {/* ✅ Steps */}
                 {recipe?.instructions && 
-                    <View className="pt-4">
+                    <View className="mt-4">
                         <Text className="text-2xl font-bold mb-2">Instructions</Text>
                 
                         <View>
@@ -167,7 +171,9 @@ useEffect(() => {
                     </View>
                 }
 
-                    <Text className="pt-4 font-bold text-2xl">Dietary Restrictions</Text>
+                <View className="border-b-2 border-lime-800 w-full my-4" />
+
+                    <Text className="mt-4 font-bold text-2xl">Dietary Restrictions</Text>
 
                  {recipe?.dietaryRestrictions && 
                         <View className="p-2 text-xs">
@@ -182,10 +188,12 @@ useEffect(() => {
                             )}
                             
                         </View> }
+                
+                <View className="border-b-2 border-lime-800 w-full my-4" />
 
                 {recipe?.notes && 
-                    <View className="pt-4">
-                        <Text className="text-lg font-bold">Additional Notes for</Text> 
+                    <View className="m-4">
+                        <Text className="text-lg font-bold ">Additional Notes for</Text> 
                         <Text className="text-lg font-bold">{recipe.dishName}</Text>
                         <Text className="italic">"{recipe.notes}"</Text>
                     </View>

@@ -10,6 +10,7 @@ import { getAuth} from "firebase/auth";
 export default function RecipesLayout() {
   return (
     <View className = "flex-1 bg-lime-200">
+
       <RecipeSearch/>
     </View>
   );

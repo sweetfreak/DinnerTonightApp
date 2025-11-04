@@ -1,16 +1,10 @@
 import {createContext, useContext, useState} from 'react'
 
 type Section =
-  | "saved"
-  | "new"
-  | "chats"
   | "search"
-  | "myRecipes"
-  | "fullRecipe"
-  | "profile"
-  | "editProfile"
-  | "editRecipe"
-  | "home"
+  | "friend list"
+  | "chats"
+
 
   interface ActiveSectionContextType {
     activeSection: Section
@@ -20,7 +14,7 @@ type Section =
   const ActiveSectionContext = createContext<ActiveSectionContextType | null>(null)
 
   export function ActiveSectionProvider({children} : {children: React.ReactNode}) {
-    const [activeSection, setActiveSection] = useState<Section>("home")
+    const [activeSection, setActiveSection] = useState<Section>("friend list")
 
     return (
         <ActiveSectionContext.Provider value={{activeSection, setActiveSection}}>

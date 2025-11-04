@@ -2,6 +2,9 @@
 import { useState } from 'react'
 import { doCreateUserWithEmailAndPassword } from '../../firebase/auth'
 import { View, Text, TextInput, TouchableOpacity } from 'react-native'
+import {collection, query, where, getDocs} from 'firebase/firestore'
+import {db} from "../../firebase/firebaseConfig"
+import {useRouter} from 'expo-router'
 
 export default function CreateAccount() {
 
@@ -11,14 +14,41 @@ export default function CreateAccount() {
     const [isRegistering, setIsRegistering] = useState(false)
     const [errorMessage, setErrorMessage] = useState('')
 
+    const router = useRouter()
+
     async function handleSubmit() {
         
    
         if (!isRegistering) {
             setIsRegistering(true)
+            setErrorMessage('')
             
             try {
+
+                const usersRef = collection(db, 'users')
+                const nameQuery = query(usersRef, where("displayName", "==", displayName))
+                const querySnapshot = await getDocs(nameQuery)
+
+                if (!displayName.trim()) {
+                    setErrorMessage('Please enter a display name')
+                    setIsRegistering(false);
+                    return
+                }
+
+                if (!email.trim()) {
+                    setErrorMessage("Please enter email and password")
+                    setIsRegistering(false);
+                    return
+                }
+
+                if (!querySnapshot.empty) {
+                    setErrorMessage("That display name is already taken. Please choose another.")
+                    setIsRegistering(false);
+                    return
+                }
+
                 await doCreateUserWithEmailAndPassword(email, password, displayName)
+                router.replace("./(tabs)");
             } catch (error: any) {
                 switch (error.code) {
                     case "auth/email-already-in-use":

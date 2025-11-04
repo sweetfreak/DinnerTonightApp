@@ -10,9 +10,9 @@ export default function ProfileScreen() {
   return (
     <View className="flex-1 items-center justify-center bg-lime-100">
       <UserProfilePage 
-        myId={currentUserProfile?.uid} 
+      //  myId={currentUserProfile?.uid} 
       />
-          
+
     </View>
 
     

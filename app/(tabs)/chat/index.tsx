@@ -1,8 +1,8 @@
 import { View, Text } from "react-native";
-import ChatPage from "@/app/components/ChatPage";
+import FriendsPage from "@/app/components/FriendsPage";
 
 export default function ChatScreen() {
   return (
-    <ChatPage />
+    <FriendsPage />
   );
 }

@@ -2,7 +2,7 @@
 import { Stack } from "expo-router";
 import "nativewind";
 import { View } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+// import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "../contexts/authContext";
 import { UserProfileProvider } from "../contexts/UserProfileContext";
 import { ActiveSectionProvider } from "../contexts/ActiveSectionContext";
@@ -47,6 +47,7 @@ function AppStack() {
       headerStyle: {
         backgroundColor: 'olivedrab'
       },
+      
       }}
         
       >
