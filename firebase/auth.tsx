@@ -15,14 +15,17 @@ import {doc, setDoc, serverTimestamp} from 'firebase/firestore'
          displayName: displayName,
          photoURL: "",
          bio: "",
+         favoriteCuisine: "",
+         favoriteRecipe: "",
          savedRecipes: [],
          myRecipes: [],
          followers: [],
          following: [],
          settings: {
-            isPublicProfile: false,
+            isPublicProfile: true,
             notificationsEnabled: true
          },
+         chatGroupIds: [],
          createdAt: serverTimestamp(),
          lastLogin: serverTimestamp(),
       })

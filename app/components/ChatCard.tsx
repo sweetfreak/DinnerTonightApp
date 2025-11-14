@@ -12,7 +12,6 @@ interface ChatCardProps {
 
 export default function ChatCard({friendID, friendDisplay, latestMessageText, latestMessageSenderID, handleStartChat} : ChatCardProps) {
 
-    console.log("TEST")
 
     return (
         <View className="m-1">

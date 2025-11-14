@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, Text, TextInput, Button, Image, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, TextInput, Button, Image, TouchableOpacity, ScrollView, Switch } from "react-native";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../../firebase/firebaseConfig";
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject, FirebaseStorage } from "firebase/storage";
@@ -17,14 +17,19 @@ interface EditProfileProps {
 export default function EditProfile() {
 
   const { currentUserProfile, setCurrentUserProfile } = useUserProfile();
-const router = useRouter();
-
+  const router = useRouter();
+  const [isPublicProfile, setIsPublicProfile] = useState(true);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true)
 
   const [profileData, setProfileData] = useState({
     displayName: "",
     photoURL: "",
     bio: "",
     favoriteCuisine: "",
+    settings: { 
+      isPublicProfile:true,
+      notificationsEnabled: true
+    }
   });
 
   const [localImageUri, setLocalImageUri] = useState<string | null>(null);
@@ -36,7 +41,13 @@ const router = useRouter();
         photoURL: currentUserProfile.photoURL ?? "",
         bio: currentUserProfile.bio ?? "",
         favoriteCuisine: currentUserProfile.favoriteCuisine ?? "",
+        settings: { 
+          isPublicProfile:currentUserProfile.settings.isPublicProfile ?? true,
+          notificationsEnabled: currentUserProfile.settings.notificationsEnabled ?? true
+        }
       });
+      setIsPublicProfile(currentUserProfile.settings.isPublicProfile);
+      setNotificationsEnabled(currentUserProfile.settings.notificationsEnabled);
     }
   }, [currentUserProfile]);
 
@@ -115,6 +126,10 @@ const router = useRouter();
         photoURL: uploadedPhotoURL,
         bio: profileData.bio,
         favoriteCuisine: profileData.favoriteCuisine,
+        settings: {
+          isPublicProfile: isPublicProfile,
+          notificationsEnabled: notificationsEnabled
+        }
       });
       setCurrentUserProfile(prev => prev ? { ...prev, photoURL: uploadedPhotoURL } : null);
 
@@ -142,7 +157,7 @@ const router = useRouter();
 
       {/* Name */}
       <View className="mb-4">
-        <Text>Name:</Text>
+        <Text className="font-bold">Name:</Text>
         <TextInput
           value={profileData.displayName}
           onChangeText={text => handleChange("displayName", text)}
@@ -153,7 +168,7 @@ const router = useRouter();
 
       {/* Bio */}
       <View className="mb-4">
-        <Text>Bio:</Text>
+        <Text className="font-bold">Bio:</Text>
         <TextInput
           value={profileData.bio}
           onChangeText={text => handleChange("bio", text)}
@@ -164,13 +179,51 @@ const router = useRouter();
 
       {/* Favorite Cuisine */}
       <View className="mb-4">
-        <Text>Favorite Cuisine:</Text>
+        <Text className="font-bold">Favorite Cuisine:</Text>
         <TextInput
           value={profileData.favoriteCuisine}
           onChangeText={text => handleChange("favoriteCuisine", text)}
           placeholder="Favorite Cuisine"
           className="border p-2 rounded bg-white"
         />
+      </View>
+
+      {/*Toggle profile public/private*/}
+      <View className="mb-4">
+        <Text className="font-bold">Profile set to Public:</Text>
+        <Text>Setting profile to private will prevent it from appearing in searches for all users.</Text>
+        <Switch
+        onValueChange={(value) =>{
+          setIsPublicProfile(value)
+          setProfileData(prev => ({
+            ...prev,
+            settings: {...prev.settings, isPublicProfile: value}
+          }))
+        }}
+        value={isPublicProfile}
+          
+            
+          />
+          <Text>{isPublicProfile ? 'Public' : 'Private'}</Text>
+          
+      </View>
+
+      {/*Toggle notifications */}
+      <View>
+        <Text className="font-bold">Notifications Enabled:</Text>
+        <Text>Setting profile to private will prevent it from appearing in searches for all users.</Text>
+        <Switch
+            onValueChange={(value) => {
+              setNotificationsEnabled(value)
+              setProfileData(prev => ({
+                ...prev,
+                settings: {...prev.settings, notificationsEnabled: value}
+              }))
+            }}
+            value={notificationsEnabled}
+          />
+          <Text>{notificationsEnabled ? 'On' : 'Off'}</Text>
+          
       </View>
 
       <Button title="Save" onPress={handleUpdateProfile} />

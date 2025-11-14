@@ -1,13 +1,13 @@
 import {useAuth} from "../../contexts/authContext/index"
 import {useState, useEffect, useRef} from 'react'
-import { doc, getDoc, getDocs, addDoc, documentId, updateDoc, collection, query, where, onSnapshot, orderBy, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, getDocs, addDoc, documentId, updateDoc, arrayUnion, collection, query, where, onSnapshot, orderBy, serverTimestamp } from "firebase/firestore";
 import { db } from "../../firebase/firebaseConfig";
 import type UserProfile from '../../types/User'
 import type Recipe from '../../types/Recipe'
 import Chat, {Message} from '../../types/Chat'
 // import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
-import {Text, Dimensions, View, ScrollView, Keyboard, KeyboardAvoidingView, Button, TextInput, TouchableOpacity, Platform} from 'react-native'
-import { Link } from 'expo-router'
+import {Text, Dimensions, Image, View, ScrollView, Keyboard, KeyboardAvoidingView, Button, TextInput, TouchableOpacity, Platform} from 'react-native'
+import { Link, useRouter } from 'expo-router'
 import { useUserProfile } from "../../contexts/UserProfileContext";
 
 interface ChatProps {
@@ -22,12 +22,19 @@ export default function ChatBox({ chat } : ChatProps) {
  const { currentUserProfile } = useUserProfile();
 const [newMessage, setNewMessage] = useState("")
 const [messages, setMessages] = useState<Message[]>([])
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const router = useRouter()
+
 const scrollViewRef = useRef<ScrollView>(null);
 
 
 const [showRecipes, setShowRecipes] = useState(false);
 const [savedRecipes, setSavedRecipes] = useState<Recipe[]>([]);
 
+const filteredRecipes = savedRecipes.filter((r) =>
+  r.dishName.toLowerCase().includes(searchQuery.toLowerCase())
+);
 
 const friendName = chat!.participantProfiles?.find(p => p.uid !== currentUserProfile?.uid)?.displayName;
 
@@ -35,6 +42,11 @@ const screenHeight = Dimensions.get('window').height;
 const inputAreaHeight = 100; // adjust based on styling
 const scrollHeight = screenHeight - inputAreaHeight;
 
+
+    function handlePress(recipeId: string)  {
+        // navigate to full recipe
+        router.push({ pathname: "../components/FullRecipe", params: { recipeId: recipeId } });
+    };
 
  // scroll to bottom
   const scrollToBottom = () => {
@@ -93,15 +105,31 @@ async function handleSendRecipe(recipe: Recipe) {
       type: "recipe",
       recipeId: recipe.id,
       recipeTitle: recipe.dishName,
+      //add recipe description??
+      recipePhotoURL: recipe.imageURL,
       senderId: currentUserProfile.uid,
       createdAt: serverTimestamp(),
     });
 
-    await updateDoc(chatRef, {
-      latestMessageID: newMessageRef.id,
-      latestMessageSenderID: currentUserProfile.uid,
-      updatedAt: serverTimestamp(),
-    });
+      const chatSnap = await getDoc(chatRef);
+        if (!chatSnap.exists()) return;
+      const chatData = chatSnap.data();
+      const shared = chatData.sharedRecipes || [];
+
+      //make an object called updates
+      const updates: any = {
+        latestMessageID: newMessageRef.id,
+        latestMessageText: "📝 Sent recipe for " + recipe.dishName,
+        latestMessageSenderID: currentUserProfile.uid,
+        updatedAt: serverTimestamp(),
+      };
+
+      // if the recipeId is not in sharedRecipes, add it to the updates object
+      if (recipe.id && !(chatData.sharedRecipes || []).includes(recipe.id)) {
+        updates.sharedRecipes = arrayUnion(recipe.id);
+      }
+      // update the chat document with the updates
+    await updateDoc(chatRef, updates);
 
     setShowRecipes(false);
   } catch (err) {
@@ -182,8 +210,15 @@ useEffect(() => {
         className={`p-3 m-1 rounded-xl ${
           msg.senderId === currentUserProfile?.uid ? "bg-blue-200 self-end" : "bg-green-200 self-start"
         }`}
+        onPress={() => handlePress(msg.recipeId)}
+
       >
-        <Text className="font-bold">{msg.text}</Text>
+        <Image source={{uri: msg.recipePhotoURL}} 
+          className="w-48 h-24 rounded-lg"
+          //resizeMode="cover" 
+                  />
+        <Text className="font-bold">{msg.recipeTitle}</Text>
+        
         <Text className="text-xs text-gray-600">(Tap to view)</Text>
       </TouchableOpacity>
     ) : (
@@ -230,7 +265,14 @@ useEffect(() => {
 
         {showRecipes && (
           <ScrollView className="max-h-60 bg-white rounded-lg mt-2 p-2">
-            {savedRecipes.map((recipe) => (
+            <TextInput
+        placeholder="Search recipes..."
+        placeholderTextColor='gray'
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        className="bg-white rounded-xl p-3 mb-4 text-lg "
+      />
+            {filteredRecipes.map((recipe) => (
               <TouchableOpacity
                 key={recipe.id}
                 className="border-b border-gray-200 p-2"
@@ -240,6 +282,7 @@ useEffect(() => {
                 <Text numberOfLines={1}>{recipe.description}</Text>
               </TouchableOpacity>
             ))}
+                  
           </ScrollView>
         )}
 

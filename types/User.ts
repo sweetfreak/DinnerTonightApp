@@ -6,10 +6,16 @@ export default interface UserProfile {
   bio?: string;
   favoriteCuisine?: string,
   favoriteRecipe?: string,
-  savedRecipes: string[]; // recipe IDs
-  myRecipes: string[];
-  friends: string[];
+  savedRecipes: string[]
+  myRecipes: string[]
+  friends: string[]
   friendRequestsSent: string[]
   friendRequestsReceived: string[]
   chatGroupIds: string[]
+  settings: {
+            isPublicProfile: boolean,
+            notificationsEnabled: boolean
+         },
+  createdAt: Date,
+  lastLogin: Date
 }

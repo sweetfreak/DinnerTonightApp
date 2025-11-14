@@ -1,13 +1,17 @@
-import {Text, View, Button, KeyboardAvoidingView, Platform, TouchableOpacity} from 'react-native'
+import {Text, View, Button, KeyboardAvoidingView, Platform, TouchableOpacity, Pressable} from 'react-native'
 import {useEffect, useState} from 'react'
 import { doc, getDoc, getDocs, addDoc, collection, orderBy, onSnapshot, query, where, serverTimestamp } from "firebase/firestore";
 import { db } from "../../firebase/firebaseConfig";
+
+import type Recipe from "../../types/Recipe";
 import type UserProfile  from '../../types/User'
 import type Chat from '../../types/Chat'
 // import { SafeAreaView } from 'react-native-safe-area-context';
 
 import ChatBox from './ChatBox'
 import ChatCard from './ChatCard'
+import RecipeCard from "./RecipeCard";
+import SharedRecipesModal from "./SharedRecipesModal";
 
     type ChatsPageProps = {
       friends: UserProfile[];
@@ -20,59 +24,9 @@ export default function ChatsPage({currentUserProfile, friends} : ChatsPageProps
     const [activeChat, setActiveChat] = useState<Chat | null>(null)
     const [showChat, setShowChat] = useState(false)
 
-
-    // useEffect(() => {
-    // if (!currentUserProfile) return;
-
-    // async function fetchChats() {
-    //     try {
-    //     const q = query(collection(db, "chats"), where("participants", "array-contains", currentUserProfile?.uid));
-    //     const snapshot = await getDocs(q);
-
-    //     const fetchedChats: Chat[] = await Promise.all(snapshot.docs.map(async (docSnap) => {
-    //         const data = docSnap.data();
-
-    //         // Get participant display names
-    //         const participantProfiles = await Promise.all(
-    //         data.participants.map(async (uid: string) => {
-    //             const userRef = doc(db, "users", uid);
-    //             const userSnap = await getDoc(userRef);
-    //             return userSnap.exists()
-    //             ? { uid, displayName: userSnap.data().displayName }
-    //             : { uid, displayName: "UnknownUser" };
-    //         })
-    //         );
-
-    //         // Fetch last message (if it exists)
-    //         let latestMessageText = "";
-    //         if (data.latestMessageID) {
-    //         const messageRef = doc(db, "chats", docSnap.id, "messages", data.latestMessageID);
-    //         const messageSnap = await getDoc(messageRef);
-    //         if (messageSnap.exists()) {
-    //             latestMessageText = messageSnap.data().text || "";
-    //         }
-    //         }
-
-    //         return {
-    //         id: docSnap.id,
-    //         participants: data.participants,
-    //         participantProfiles,
-    //         latestMessageText,
-    //         latestMessageSenderID: data.latestMessageSenderID || "",
-    //         updatedAt: data.updatedAt?.toDate?.() || new Date(),
-    //         messages: [],
-            
-    //         } as Chat & { latestMessageText?: string };
-    //     }));
-
-    //     setAllChats(fetchedChats);
-    //     } catch (error) {
-    //     console.error("Error fetching chats:", error);
-    //     }
-    // }
-
-    // fetchChats();
-    // }, [currentUserProfile]);
+    const [showSharedRecipes, setShowSharedRecipes] = useState(false);
+    const [sharedRecipes, setSharedRecipes] = useState<Recipe[]>([]);
+    
 
     useEffect(() => {
   if (!currentUserProfile) return;
@@ -104,6 +58,7 @@ export default function ChatsPage({currentUserProfile, friends} : ChatsPageProps
           id: docSnap.id,
           participants: data.participants,
           participantProfiles,
+          sharedRecipes: data.sharedRecipes,
           latestMessageText: data.latestMessageText || "",
           latestMessageSenderID: data.latestMessageSenderID || "",
           updatedAt: data.updatedAt?.toDate?.() || new Date(),
@@ -117,6 +72,42 @@ export default function ChatsPage({currentUserProfile, friends} : ChatsPageProps
 
   return () => unsubscribe();
 }, [currentUserProfile]);
+
+useEffect(() => {
+  if (!showSharedRecipes|| !currentUserProfile) return;
+
+  async function fetchSharedRecipes() {
+    try {
+      const chatIds = allChats.map(c => c.id);
+      let allRecipeMessages: Recipe[] = [];
+
+      for (const chatId of chatIds) {
+        const messagesRef = collection(db, "chats", chatId, "messages");
+        const q = query(messagesRef, where("type", "==", "recipe"));
+        const snapshot = await getDocs(q);
+
+        const recipes = snapshot.docs.map(docSnap => {
+          const data = docSnap.data();
+          return {
+            id: data.recipeId,
+            dishName: data.recipeTitle,
+            imageURL: data.recipePhotoURL,
+            description: data.recipeDescription || "",
+          } as Recipe;
+        });
+
+        allRecipeMessages = [...allRecipeMessages, ...recipes];
+      }
+
+      setSharedRecipes(allRecipeMessages);
+    } catch (err) {
+      console.error("Error fetching shared recipes:", err);
+      setSharedRecipes([]);
+    }
+  }
+
+  fetchSharedRecipes();
+}, [showSharedRecipes]);
 
     async function getOrCreateChat(currentUid: string, friendUid: string) {
         const chatsRef = collection(db, "chats")
@@ -156,6 +147,7 @@ export default function ChatsPage({currentUserProfile, friends} : ChatsPageProps
             id: chatDoc.id,
             participants: chatDoc.data()!.participants,
             participantProfiles,
+            sharedRecipes: chatDoc.data()!.sharedRecipes,
             latestMessageText: chatDoc.data()!.latestMessageText || "",
             latestMessageSenderID: chatDoc.data()!.latestMessageSenderID || "",
             updatedAt: chatDoc.data()!.updatedAt?.toDate?.() || new Date(),
@@ -171,6 +163,9 @@ export default function ChatsPage({currentUserProfile, friends} : ChatsPageProps
         setShowChat(true)
 
     }
+
+        console.log("TEST")
+
 
     return (
         // <SafeAreaView className="flex-1 bg-lime-100 ">
@@ -191,12 +186,27 @@ export default function ChatsPage({currentUserProfile, friends} : ChatsPageProps
                                 </TouchableOpacity>
                             
                             <TouchableOpacity 
-                                onPress={() => setShowChat(false)}
+                                onPress={() => setShowSharedRecipes(true)}
                                 className="bg-lime-800 self-center rounded-full p-3 mb-2"
                                 > 
                                 <Text className="text-white">View Recipes</Text>
 
                             </TouchableOpacity>
+
+                            {/* <Pressable
+                            onPress={() => setShowSharedRecipes(true)}
+                            className="bg-green-600 px-4 py-2 rounded-full self-center mt-4"
+                            >
+                            <Text className="text-white">View Recipes</Text>
+                            </Pressable> */}
+
+                             <SharedRecipesModal
+                                visible={showSharedRecipes}
+                                onClose={() => setShowSharedRecipes(false)}
+                                sharedRecipeIds={activeChat?.sharedRecipes || []}
+                            />
+
+
                         </View>
                     <ChatBox 
                         chat = {activeChat}                    
