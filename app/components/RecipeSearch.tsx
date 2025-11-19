@@ -50,9 +50,11 @@ export default function Recipes() {
   return (
     <ScrollView className="flex-1 bg-lime-200 px-4">
       {/* Header */}
-      <View className="pt-10 pb-4">
-        <Text className="text-3xl font-bold text-center">Recipes</Text>
-      </View>
+      
+                        <Text className='text-3xl text-center text-lime-800 font-bold m-4'>Recipes</Text>
+
+      
+      
 
     <View className="self-center bg-green-600 rounded-full px-4 py-2 mb-4"  >
       <Link href="../../components/NewRecipe" className="p-2 ">

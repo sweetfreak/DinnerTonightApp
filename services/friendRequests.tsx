@@ -53,3 +53,25 @@ export async function declineFriendRequest(currentUserId: string, requesterId: s
   
   await batch.commit();
 }
+
+export async function removeFriend(currentUserId: string, friendId: string) {
+  const batch = writeBatch(db)
+
+  const currentRef = doc(db, "users", currentUserId)
+  const friendRef = doc(db, "users", friendId)
+
+  batch.update(currentRef, {
+    friends: arrayRemove(friendId),
+    friendRequestsSent: arrayRemove(friendId),
+    friendRequestsReceived: arrayRemove(friendId)
+  })
+
+  batch.update(friendRef, {
+    friends: arrayRemove(currentUserId),
+    friendRequestsSent: arrayRemove(currentUserId),
+    friendRequestsReceived: arrayRemove(currentUserId)
+  })
+
+await batch.commit()
+
+}

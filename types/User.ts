@@ -18,4 +18,5 @@ export default interface UserProfile {
          },
   createdAt: Date,
   lastLogin: Date
+  banned: false
 }

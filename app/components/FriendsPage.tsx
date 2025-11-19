@@ -20,10 +20,11 @@ export default function FriendsPage() {
     const { currentUserProfile } = useUserProfile();
     const [showFriends, setShowFriends] = useState(false)
     const {activeSection, setActiveSection} = useActiveSection()
+    const [pendingRequests, setPendingRequests] = useState<UserProfile[]>([])
 
 
-
-const [friends, setFriends] = useState<(UserProfile[])>([])
+    const [friends, setFriends] = useState<(UserProfile[])>([])
+    const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null)
 
     useEffect(() => {
         setShowFriends(true)
@@ -66,7 +67,36 @@ const [friends, setFriends] = useState<(UserProfile[])>([])
         getFriends()
     }, [currentUserProfile])
 
-    
+    useEffect(() => {
+        async function loadPendingRequests() {
+            if (!currentUserProfile) return
+
+            const ids = [
+            ...(currentUserProfile.friendRequestsSent || []),
+            ...(currentUserProfile.friendRequestsReceived || [])
+            ];            
+            if (ids.length === 0) {
+                setPendingRequests([])
+                return
+            }
+
+            const profiles = await Promise.all(
+                ids.map(async (id) => {
+                    const ref = doc(db, 'users', id)
+                    const snap = await getDoc(ref)
+                    return snap.exists() ? ({uid: snap.id, ...snap.data()} as UserProfile)
+                    : null
+                })
+            )
+            setPendingRequests(profiles.filter(Boolean) as UserProfile[])
+        }
+        loadPendingRequests()
+    }, [currentUserProfile])
+
+    function openFriendChat(friendId: string) {
+        setSelectedFriendId(friendId)
+        setActiveSection("chats" as any)
+    }
 
     return (
         // <SafeAreaView edges={['bottom']} className="flex-1 bg-lime-100 ">
@@ -84,7 +114,11 @@ const [friends, setFriends] = useState<(UserProfile[])>([])
                         {['search', 'friend list', 'chats', ].map((type) => (
                             <Pressable
                                 key={type}
-                                onPress={() => setActiveSection(type as any)}
+                                onPress={() => {
+                                    setSelectedFriendId(null)
+                                    setActiveSection(type as any)
+                                    } 
+                                }
                                 className={`px-4 py-2 rounded-full ${
                                     activeSection === type ? "bg-green-600" : "bg-green-300"}`}>
                                 <Text className='text-white capitalize'>{type}</Text>
@@ -94,12 +128,17 @@ const [friends, setFriends] = useState<(UserProfile[])>([])
                     </View>
 
                     <View className="flex-1">
-                        {activeSection === "friend list"  && <FriendList friends={friends}/> }
+                        {activeSection === "friend list"  && <FriendList 
+                            friends={friends}
+                            pendingRequests={pendingRequests}
+                            openFriendChat={openFriendChat}
+                            /> }
                         {activeSection === "search"  && <FriendSearch />}
                         {activeSection === "chats"  && <ChatsPage 
                             currentUserProfile= {currentUserProfile}
                             friends={friends}
-                            
+                            selectedFriendId={selectedFriendId}
+                            clearSelectedFriend={() => setSelectedFriendId(null)}
                         /> }
 
                     </View>

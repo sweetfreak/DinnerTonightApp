@@ -16,20 +16,23 @@ import SharedRecipesModal from "./SharedRecipesModal";
     type ChatsPageProps = {
       friends: UserProfile[];
       currentUserProfile: UserProfile | null
+      selectedFriendId: string | null
+      clearSelectedFriend: () => void;
 
     };
 
-export default function ChatsPage({currentUserProfile, friends} : ChatsPageProps) {
+export default function ChatsPage({currentUserProfile, friends, selectedFriendId, clearSelectedFriend} : ChatsPageProps) {
     const [allChats, setAllChats] = useState<Chat[]>([])
     const [activeChat, setActiveChat] = useState<Chat | null>(null)
     const [showChat, setShowChat] = useState(false)
 
-    const [showSharedRecipes, setShowSharedRecipes] = useState(false);
-    const [sharedRecipes, setSharedRecipes] = useState<Recipe[]>([]);
+    const [showSharedRecipes, setShowSharedRecipes] = useState(false)
+    const [sharedRecipes, setSharedRecipes] = useState<Recipe[]>([])
     
 
+
     useEffect(() => {
-  if (!currentUserProfile) return;
+  if (!currentUserProfile) return
 
   const q = query(
     collection(db, "chats"),
@@ -72,6 +75,11 @@ export default function ChatsPage({currentUserProfile, friends} : ChatsPageProps
 
   return () => unsubscribe();
 }, [currentUserProfile]);
+
+ useEffect(() => {
+    if (!selectedFriendId || !currentUserProfile) return
+    handleStartChat(selectedFriendId)
+    },[selectedFriendId])
 
 useEffect(() => {
   if (!showSharedRecipes|| !currentUserProfile) return;
@@ -178,7 +186,11 @@ useEffect(() => {
                     <View className="flex-1 w-full">
                         <View className='flex-row gap-8 self-center'>
                             <TouchableOpacity 
-                                onPress={() => setShowChat(false)}
+                                onPress={() => {
+                                  setShowChat(false)
+                                 clearSelectedFriend()
+                                }
+                                }
                                 className="bg-lime-800 self-center rounded-full p-3 mb-2"
                                 > 
                                 <Text className="text-white">Back to Chat List</Text>
@@ -193,12 +205,7 @@ useEffect(() => {
 
                             </TouchableOpacity>
 
-                            {/* <Pressable
-                            onPress={() => setShowSharedRecipes(true)}
-                            className="bg-green-600 px-4 py-2 rounded-full self-center mt-4"
-                            >
-                            <Text className="text-white">View Recipes</Text>
-                            </Pressable> */}
+                          
 
                              <SharedRecipesModal
                                 visible={showSharedRecipes}

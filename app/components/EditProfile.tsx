@@ -6,7 +6,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject, FirebaseSto
 import * as ImagePicker from "expo-image-picker";
 import type UserProfile from "../../types/User";
 import { useUserProfile } from "../../contexts/UserProfileContext";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Link, useLocalSearchParams, useRouter } from "expo-router";
 
 interface EditProfileProps {
   // currentUserProfile: UserProfile | null;
@@ -87,7 +87,7 @@ export default function EditProfile() {
 
       return downloadURL;
     } catch (error) {
-      console.error("❌ Error uploading profile picture:", error);
+      console.error("ERROR uploading profile picture:", error);
       throw error;
     }
   };
@@ -225,6 +225,10 @@ export default function EditProfile() {
           <Text>{notificationsEnabled ? 'On' : 'Off'}</Text>
           
       </View>
+
+      <Link href={{ pathname:"../components/UserChangePassword"}}  >
+          <Text className="text-4xl font-bold text-blue-800 font-underline">Change Password</Text>
+      </Link>
 
       <Button title="Save" onPress={handleUpdateProfile} />
     </ScrollView>

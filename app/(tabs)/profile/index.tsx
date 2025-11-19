@@ -8,9 +8,8 @@ export default function ProfileScreen() {
   const {currentUserProfile} = useUserProfile()
 
   return (
-    <View className="flex-1 items-center justify-center bg-lime-100">
+    <View className="">
       <UserProfilePage 
-      //  myId={currentUserProfile?.uid} 
       />
 
     </View>
