@@ -1,8 +1,10 @@
 // SignOutButton.tsx
-import { Button } from "react-native";
+import { TouchableOpacity, Text } from "react-native";
 import { useAuth } from "../../contexts/authContext";
 
 export default function SignOutButton() {
   const { signOut } = useAuth();
-  return <Button title="Sign Out" onPress={signOut} />;
+  return <TouchableOpacity onPress={signOut} className="p-2 rounded bg-red-500">
+    <Text className="text-white">Sign out</Text>
+  </TouchableOpacity>;
 }

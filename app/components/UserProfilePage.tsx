@@ -1,52 +1,56 @@
-import { useState, useEffect } from "react";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../firebase/firebaseConfig";
-import { Text, View, TouchableOpacity, Pressable, Button, Image, ScrollView, Modal } from "react-native";
-import { Link, useLocalSearchParams } from "expo-router";
-import { useUserProfile } from "../../contexts/UserProfileContext";
-import useFavorites from "../../hooks/useFavorites";
-import SignOutButton from "./SignOutButton";
-import RecipeCardMini from "./RecipeCard";
-import { sendFriendRequest, acceptFriendRequest, declineFriendRequest, removeFriend } from "../../services/friendRequests";
-import type Recipe from "../../types/Recipe";
-import type UserProfile from "../../types/User";
+import { useState, useEffect } from "react"
+import { doc, getDoc } from "firebase/firestore"
+import { db } from "../../firebase/firebaseConfig"
+import { Text, View, TouchableOpacity, Pressable, Button, Image, ScrollView, Modal } from "react-native"
+import { Link, useLocalSearchParams } from "expo-router"
+import { useUserProfile } from "../../contexts/UserProfileContext"
+// import useFavorites from "../../hooks/useFavorites"
+import SignOutButton from "./SignOutButton"
+import RecipeCard from "./RecipeCard"
+import { sendFriendRequest, acceptFriendRequest, declineFriendRequest, removeFriend } from "../../services/friendRequests"
+import type Recipe from "../../types/Recipe"
+import type UserProfile from "../../types/User"
+import { Ionicons } from "@expo/vector-icons"
+
 
 export default function UserProfilePage() {
-  const params = useLocalSearchParams<{ id: string }>();
-  const { currentUserProfile } = useUserProfile();
+  const params = useLocalSearchParams<{ id: string }>()
 
-  const isViewingOwnProfile = !params?.id;
+  const { currentUserProfile, favorites, toggleFavorite } = useUserProfile()
 
-  const id = params?.id || currentUserProfile?.uid;
+  const isViewingOwnProfile = !params?.id
 
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const { favorites, toggleFavorite, loading: favoritesLoading } = useFavorites(currentUserProfile?.savedRecipes);
+  const id = params?.id || currentUserProfile?.uid
+
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [recipes, setRecipes] = useState<Recipe[]>([])
+  //  const {loading: favoritesLoading } = useFavorites(currentUserProfile?.savedRecipes)
   const [showModal, setShowModal] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   // 🔹 Single stable profile fetch
   useEffect(() => {
-    if (!id ) return;
+    if (!id ) return
 
     const loadProfile = async () => {
       if (id === currentUserProfile?.uid) {
-        setProfile(currentUserProfile);
+        setProfile(currentUserProfile)
         return;
       }
 
-      const docRef = doc(db, "users", id);
-      const docSnap = await getDoc(docRef);
+      const docRef = doc(db, "users", id)
+      const docSnap = await getDoc(docRef)
       if (!docSnap.exists()) {
-        console.warn("No user found for ID:", id);
-        setProfile(null);
-        return;
+        console.warn("No user found for ID:", id)
+        setProfile(null)
+        return
       }
 
-      const data = docSnap.data();
+      const data = docSnap.data()
       setProfile({
-        uid: docSnap.id, // ✅ attach uid manually
+        uid: docSnap.id, 
         ...data,
-      } as UserProfile);
+      } as UserProfile)
     };
 
     loadProfile();
@@ -77,7 +81,7 @@ export default function UserProfilePage() {
     return <Text className="text-center mt-8">No user found.</Text>;
   }
   if (!profile) return <Text className="text-center mt-8">Loading profile...</Text>;
-  if (favoritesLoading) return <Text className="text-center mt-8">Loading favorites...</Text>;
+  // if (favoritesLoading) return <Text className="text-center mt-8">Loading favorites...</Text>;
 
   // 🔹 Friend logic
   async function handleSendRequest() {
@@ -109,7 +113,7 @@ export default function UserProfilePage() {
   }
 
   if (!profile) return <Text className="text-center mt-8">Loading profile...</Text>;
-  if (favoritesLoading) return <Text className="text-center mt-8">Loading favorites...</Text>;
+  // if (favoritesLoading) return <Text className="text-center mt-8">Loading favorites...</Text>;
 
 
 
@@ -123,9 +127,29 @@ export default function UserProfilePage() {
 
   return (
     <ScrollView className="bg-lime-100">
+      {isCurrentUsersProfile &&
+        <Pressable className="self-end absolute p-4 active:opacity-50"
+          onPress={()=> setMenuOpen((prev) => !prev)}
+        >
+          <Ionicons name="settings" size={28} color="#35530e" />
+        </Pressable>
+      }
+      {menuOpen &&
+        <View
+          className= "absolute top-16 right-4 bg-lime-700 rounded-lg shadow-lg p-3 z-50">
+            <Link href="../../components/EditProfile"
+            className="p-2 rounded bg-blue-500 text-white mb-2">
+            
+            Edit Profile
+            </Link>
 
-      <View className="m-2 items-center">
-        <Text className="text-3xl text-center text-lime-800 font-bold m-4">
+            <View className="p-2 rounded bg-red-500">
+              <SignOutButton />
+            </View>
+        </View>
+      }
+      <View className="items-center flex-row ">
+        <Text className="text-3xl text-center text-lime-800 font-bold m-6">
           {isCurrentUsersProfile ? `Welcome, ${profile.displayName}!` : `${profile.displayName}'s Profile`}
         </Text>
       </View>
@@ -137,15 +161,9 @@ export default function UserProfilePage() {
           resizeMode="cover"
         />
 
-        {isCurrentUsersProfile ? (
+        {!isCurrentUsersProfile &&
+   
           <View>
-            <Link href="../../components/EditProfile" className="p-1 m-4 rounded text-white bg-blue-500 self-center">
-              Edit Profile
-            </Link>
-            <SignOutButton />
-          </View>
-        ) : (
-          <>
             {isFriend ? (
               <View className="flex-row items-center p-2">
               <Button title="Friends ✓" disabled />
@@ -193,8 +211,8 @@ export default function UserProfilePage() {
             ) : (
               <Button title="Add Friend" onPress={handleSendRequest} />
             )}
-          </>
-        )}
+          </View>
+      }
       </View>
 
 
@@ -219,12 +237,13 @@ export default function UserProfilePage() {
         <View className="m-4">
           {recipes.length > 0 ? (
             recipes.map((dish) => (
-              <RecipeCardMini
-                key={dish.id}
-                recipe={dish}
-                isFavorite={favorites.includes(dish.id)}
-                toggleFavorite={() => toggleFavorite(dish.id)}
-              />
+              <View key={dish.id} className="mb-2">
+                <RecipeCard
+                  recipe={dish}
+                  //isFavorite={favorites.includes(dish.id)}
+                  //toggleFavorite={() => toggleFavorite(dish.id)}
+                />
+              </View>
             ))
           ) : (
             <Text>No recipes yet.</Text>

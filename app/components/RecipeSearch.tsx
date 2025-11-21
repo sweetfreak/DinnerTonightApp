@@ -5,13 +5,14 @@ import {Link} from 'expo-router'
 import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
 import { db } from "../../firebase/firebaseConfig";
 import { useUserProfile } from "../../contexts/UserProfileContext";
-import useFavorites from "../../hooks/useFavorites";
+// import useFavorites from "../../hooks/useFavorites";
 import RecipeCard from "./RecipeCard";
 import type Recipe  from "../../types/Recipe";
+import * as Haptics from "expo-haptics"
 
 export default function Recipes() {
-  const { currentUserProfile } = useUserProfile();
-  const { favorites, toggleFavorite, loading } = useFavorites(currentUserProfile?.savedRecipes);
+  const { currentUserProfile, favorites = [], toggleFavorite, } = useUserProfile();
+  // const {  loading } = useFavorites(currentUserProfile?.savedRecipes)
 
   const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
   const [filterType, setFilterType] = useState<"all" | "mine" | "favs">("all");
@@ -31,7 +32,7 @@ export default function Recipes() {
     return unsubscribe;
   }, []);
 
-  if (loading) return <Text>Loading...</Text>;
+  // if (loading) return <Text>Loading...</Text>;
 
   // search filter
   const filtered = allRecipes.filter((recipe) => {
@@ -56,8 +57,9 @@ export default function Recipes() {
       
       
 
-    <View className="self-center bg-green-600 rounded-full px-4 py-2 mb-4"  >
-      <Link href="../../components/NewRecipe" className="p-2 ">
+    <View className="self-center bg-lime-900 rounded-full px-4 py-2 mb-4"  >
+      <Link href="../../components/NewRecipe" className="p-2 "
+      onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)}>
           <Text className="text-white">Add a New Recipe</Text>
       </Link>
     </View>
@@ -67,9 +69,13 @@ export default function Recipes() {
         {["all", "mine", "favs"].map((type) => (
           <Pressable
             key={type}
-            onPress={() => setFilterType(type as any)}
-            className={`px-4 py-2 rounded-full ${
-              filterType === type ? "bg-green-600" : "bg-green-300"
+            onPress={() =>  {
+              setFilterType(type as any)
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            }
+            }
+            className={`px-4 py-2 rounded-full active:opacity-75 ${
+              filterType === type ? "bg-lime-700" : "bg-lime-500"
             }`}
           >
             <Text className="text-white capitalize">{type}</Text>
@@ -95,8 +101,8 @@ export default function Recipes() {
           <RecipeCard
             key={dish.id}
             recipe={dish}
-            isFavorite={favorites.includes(dish.id)}
-            toggleFavorite={() => toggleFavorite(dish.id)}
+            // isFavorite={favorites.includes(dish.id)}
+            // toggleFavorite={() => toggleFavorite(dish.id)}
           />
           </View>
         ))

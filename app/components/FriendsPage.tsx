@@ -6,6 +6,8 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebase/firebaseConfig";
 import FriendList from './FriendList'
 import ChatsPage from './ChatsPage';
+
+import * as Haptics from "expo-haptics";
 // import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {Text, View, ScrollView, KeyboardAvoidingView, Button, Platform, TouchableOpacity, Pressable} from 'react-native'
@@ -117,10 +119,11 @@ export default function FriendsPage() {
                                 onPress={() => {
                                     setSelectedFriendId(null)
                                     setActiveSection(type as any)
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                                     } 
                                 }
-                                className={`px-4 py-2 rounded-full ${
-                                    activeSection === type ? "bg-green-600" : "bg-green-300"}`}>
+                                className={`px-4 py-2 rounded-full active:opacity-75 ${
+                                    activeSection === type ? "bg-lime-700" : "bg-lime-500"}`}>
                                 <Text className='text-white capitalize'>{type}</Text>
                             </Pressable>
                         ))}

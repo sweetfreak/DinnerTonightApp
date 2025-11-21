@@ -110,11 +110,12 @@ import { View, Text, TouchableOpacity, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useUserProfile } from "../../contexts/UserProfileContext";
 import "nativewind";
+import * as Haptics from "expo-haptics"
 
 export default function TabsLayout() {
   const { currentUserProfile } = useUserProfile();
 
-  // Custom Tab Bar
+  
   function CustomTabBar({ state, descriptors, navigation }: any) {
     return (
       <View className="flex-row h-20 bg-lime-800 border-t border-lime-700">
@@ -149,7 +150,11 @@ export default function TabsLayout() {
               key={index}
               accessibilityRole="button"
               accessibilityState={isFocused ? { selected: true } : {}}
-              onPress={onPress}
+              onPress={() => {
+                onPress()
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              }
+              }
               className={`flex-1 items-center justify-center ${bgClass}`}
             >
               <Ionicons
@@ -173,8 +178,12 @@ export default function TabsLayout() {
 
   return (
     <Tabs
-      screenOptions={{ headerShown: false }}
+      screenOptions={{ 
+        headerShown: false,
+        animation: "shift" // or "fade", "none"
+      }}
       tabBar={(props) => <CustomTabBar {...props} />}
+      
     >
       <Tabs.Screen name="recipes/index" options={{ title: "Recipes" }} />
       <Tabs.Screen name="chat/index" options={{ title: "Friends" }} />

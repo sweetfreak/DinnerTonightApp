@@ -2,6 +2,7 @@ import {Text, View, Button, KeyboardAvoidingView, Platform, TouchableOpacity, Pr
 import {useEffect, useState} from 'react'
 import { doc, getDoc, getDocs, addDoc, collection, orderBy, onSnapshot, query, where, serverTimestamp } from "firebase/firestore";
 import { db } from "../../firebase/firebaseConfig";
+import * as Haptics from "expo-haptics"
 
 import type Recipe from "../../types/Recipe";
 import type UserProfile  from '../../types/User'
@@ -189,6 +190,7 @@ useEffect(() => {
                                 onPress={() => {
                                   setShowChat(false)
                                  clearSelectedFriend()
+                                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                                 }
                                 }
                                 className="bg-lime-800 self-center rounded-full p-3 mb-2"
@@ -198,7 +200,10 @@ useEffect(() => {
                                 </TouchableOpacity>
                             
                             <TouchableOpacity 
-                                onPress={() => setShowSharedRecipes(true)}
+                                onPress={() => {
+                                  setShowSharedRecipes(true)
+                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                }}
                                 className="bg-lime-800 self-center rounded-full p-3 mb-2"
                                 > 
                                 <Text className="text-white">View Recipes</Text>

@@ -62,3 +62,4 @@ export async function doSignOut() {
         url: `${window.location.origin}/home`,
     })
  }
+

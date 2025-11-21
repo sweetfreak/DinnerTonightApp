@@ -5,6 +5,7 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../firebase/firebaseConfig";
 import type UserProfile from "../../types/User";
 import { useUserProfile } from "../../contexts/UserProfileContext";
+import * as Haptics from "expo-haptics"
 
 export default function FriendSearch() {
   const { currentUserProfile } = useUserProfile();
@@ -67,7 +68,7 @@ export default function FriendSearch() {
             key={user.uid}
             className="bg-lime-200 border border-lime-600 p-4 rounded-lg mb-3"
             href={{ pathname:"/components/UserProfilePage", params: {id: user.uid}}}  
-
+            onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)}
           >
         <View>
             <Text className="text-xl font-bold text-lime-800">

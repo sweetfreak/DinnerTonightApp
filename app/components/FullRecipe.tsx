@@ -8,11 +8,13 @@ import {View, Text, TouchableOpacity, ScrollView, Image, FlatList, Button, Linki
 import { Link, useLocalSearchParams } from "expo-router"; 
 import { useUserProfile } from "../../contexts/UserProfileContext";
 
+// import useFavorites from "../../hooks/useFavorites";
+
 
 export default function FullRecipe() {
   const { recipeId } = useLocalSearchParams<{ recipeId: string }>();
     
-    const { currentUserProfile } = useUserProfile();
+    const { currentUserProfile, favorites, toggleFavorite } = useUserProfile();
     const [isCreator, setIsCreator] = useState(false)
     const myRecipeId = recipeId
     const [recipe, setRecipe] = useState<Recipe | null>(null)
@@ -21,6 +23,10 @@ export default function FullRecipe() {
             const activeIngredients = Object.entries(recipe?.ingredients ?? []).filter(([_, value]) => value)
 
                 const activeInstructions = Object.entries(recipe?.instructions ?? []).filter(([_, value]) => value)
+
+    // const { favorites, toggleFavorite, loading } = useFavorites(currentUserProfile?.savedRecipes)
+    
+    const isFavorite = recipe ? favorites.includes(recipe.id) : false;
 
 
 const openSource = (url: string) => {
@@ -78,29 +84,41 @@ useEffect(() => {
             </View>
             
             <View>
-                <View className=" flex justify-between">
+                <View className="flex-row items-center gap-2">
                     <Text className="text-4xl">{recipe?.dishName}</Text>
 
-                    { isCreator && <Link  href={{pathname: "./EditRecipe", params: {uid: currentUserProfile?.uid, recipeId: recipeId}}}
-                    className='p-2 rounded text-white bg-blue-500 self-start' >
-                        Edit Recipe
-                    </Link> }
+                    
+                    {recipe &&
+                        <TouchableOpacity onPress={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(recipe.id);
+                        }}>
+                        <Text className="text-lg" onPress={() => toggleFavorite(recipe.id)}>  {isFavorite ? "♥️" : "♡" }</Text>
+                        </TouchableOpacity>
+                    }
                 </View>
-
-                <View className="flex-row">
+              
+                <View className="flex-row items-center gap-2">
                   <Text className="font-bold">Uploaded by:</Text>  
                   <Link
                     href={{pathname: './UserProfilePage', params: {id: recipe?.createdBy }}}
-                ><Text className="underline text-blue-600">{recipe?.createdByDisplayName}</Text></Link></View>
+                ><Text className="underline text-blue-600">{recipe?.createdByDisplayName}</Text></Link>
+                
+                  { isCreator && <Link  href={{pathname: "./EditRecipe", params: {uid: currentUserProfile?.uid, recipeId: recipeId}}}
+                    className='p-1 rounded text-white bg-blue-500 self-start' >
+                       Edit Recipe
+                    </Link> 
+                }
+                </View>
 
-                {recipe?.chef && <View className="flex-row"><Text className="font-bold">Chef: </Text><Text>{recipe.chef}</Text></View>}
+                {recipe?.chef && <View className="flex-row gap-2"><Text className="font-bold">Chef:</Text><Text>{recipe.chef}</Text></View>}
 
               
 
 
 
                 {recipe?.source && (
-                    <View className="flex-row flex-wrap">
+                    <View className="flex-row flex-wrap gap-2">
                         <Text className="font-bold" >Source:</Text>
                         <TouchableOpacity onPress={() => openSource(recipe.source)}>
                         <Text className="text-blue-700 underline underline ">{recipe.source}</Text>
@@ -108,8 +126,8 @@ useEffect(() => {
                     </View>
                 )}
 
-                {recipe?.cuisine && <View className="flex-row"><Text className="font-bold">Cuisine: </Text><Text>{recipe.chef}</Text></View>}
-                {recipe?.servings && <Text><Text className="font-bold">Servings:</Text> {recipe?.servings}</Text>}
+                {recipe?.cuisine && <View className="flex-row gap-2"><Text className="font-bold">Cuisine:</Text><Text>{recipe.chef}</Text></View>}
+                {recipe?.servings && <Text><Text className="font-bold gap-2">Servings:</Text> {recipe?.servings}</Text>}
 
 
                 {recipe?.description && <View className="pt-4 pb-4">
