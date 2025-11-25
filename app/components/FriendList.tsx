@@ -1,4 +1,4 @@
-import {Text, View, TouchableOpacity} from 'react-native'
+import {Text, View, TouchableOpacity, ScrollView} from 'react-native'
 import {Link} from 'expo-router'
 import type UserProfile  from '../../types/User'
 
@@ -39,30 +39,32 @@ export default function FriendList({friends, openFriendChat, pendingRequests}: F
         </View>
       )}
     {friends?.length > 0 ? 
-            <View className=''>
+            <ScrollView className=''>
             <Text className="text-xl font-bold text-lime-800 mb-2">
-            Friends
-          </Text>
+                Friends
+            </Text>
                 {friends.map((friend, index) => {
-                    return <View key={index} className="border-t border-gray-400 flex-row gap-4 items-center"> 
+                    return <View key={index} className="border-t border-gray-400 flex-col items-center"> 
                                 {/* <Text>{friend.displayName} </Text> */}
 
-                                <Link 
-                                    href={{ pathname:"/components/UserProfilePage", params: {id: friend.uid}}}  
-                                    className=" my-4 p-2 rounded-full bg-lime-800">
-                                    <Text className='text-lime-400'>{friend.displayName}'s Profile</Text>
-                                </Link>   
-                                <TouchableOpacity
-                                    className="my-4 p-2 rounded-full bg-lime-500"
-                                    onPress={() => openFriendChat(friend.uid)}
-                                    >
-                                    <Text className="text-lime-800">Open Chat</Text>
-                                    
+                                <Text className="self-center pt-4 font-bold text-xl">{friend.displayName}</Text>
+                                <View className="flex-row gap-4">
+                                    <Link 
+                                        href={{ pathname:"/components/UserProfilePage", params: {id: friend.uid}}}  
+                                        className=" my-4 p-2 rounded-full bg-lime-800">
+                                        <Text className='text-lime-400'>Open Profile</Text>
+                                    </Link>   
+                                    <TouchableOpacity
+                                        className="my-4 p-2 rounded-full bg-lime-500"
+                                        onPress={() => openFriendChat(friend.uid)}
+                                        >
+                                        <Text className="text-lime-800">Open Chat</Text>
                                     </TouchableOpacity>   
+                                </View>
                                             
                             </View>
                 })}
-            </View>
+            </ScrollView>
 
         :
         <Text>

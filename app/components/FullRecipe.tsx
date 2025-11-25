@@ -4,7 +4,7 @@ import {useEffect, useState} from 'react'
 import { db } from "../../firebase/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 
-import {View, Text, TouchableOpacity, ScrollView, Image, FlatList, Button, Linking} from 'react-native'
+import {View, Text, TouchableOpacity, ScrollView, Image, Switch, FlatList, Button, Linking} from 'react-native'
 import { Link, useLocalSearchParams } from "expo-router"; 
 import { useUserProfile } from "../../contexts/UserProfileContext";
 
@@ -19,12 +19,15 @@ export default function FullRecipe() {
     const myRecipeId = recipeId
     const [recipe, setRecipe] = useState<Recipe | null>(null)
 
+    const [largerFont, setLargerFont] = useState(false)
+    const toggleLargerFont = () => setLargerFont(prev => !prev);
+
+
         const activeRestrictions = Object.entries(recipe?.dietaryRestrictions ?? {}).filter(([_, value]) => value)
             const activeIngredients = Object.entries(recipe?.ingredients ?? []).filter(([_, value]) => value)
 
                 const activeInstructions = Object.entries(recipe?.instructions ?? []).filter(([_, value]) => value)
 
-    // const { favorites, toggleFavorite, loading } = useFavorites(currentUserProfile?.savedRecipes)
     
     const isFavorite = recipe ? favorites.includes(recipe.id) : false;
 
@@ -97,13 +100,22 @@ useEffect(() => {
                         </TouchableOpacity>
                     }
                 </View>
+                <View className="gap-4 py-4 flex-row items-center self-start">
+                        <Text className="italic">Make Font larger:</Text>
+                    <Switch 
+                        className="border bg-gray-400 rounded-full"
+                        onValueChange={toggleLargerFont}
+                        value={largerFont}
+                    />
+                    </View>
               
-                <View className="flex-row items-center gap-2">
-                  <Text className="font-bold">Uploaded by:</Text>  
+                <View className="flex-col gap-2">
+                    <View className="flex-row">
+                  <Text className={`font-bold ${largerFont ? 'text-lg' : 'text-md'}`}>Uploaded by:</Text>  
                   <Link
                     href={{pathname: './UserProfilePage', params: {id: recipe?.createdBy }}}
-                ><Text className="underline text-blue-600">{recipe?.createdByDisplayName}</Text></Link>
-                
+                ><Text className={`underline text-blue-600 ${largerFont ? 'text-2xl' : 'text-md'}`}> {recipe?.createdByDisplayName}</Text></Link>
+                    </View>
                   { isCreator && <Link  href={{pathname: "./EditRecipe", params: {uid: currentUserProfile?.uid, recipeId: recipeId}}}
                     className='p-1 rounded text-white bg-blue-500 self-start' >
                        Edit Recipe
@@ -111,7 +123,7 @@ useEffect(() => {
                 }
                 </View>
 
-                {recipe?.chef && <View className="flex-row gap-2"><Text className="font-bold">Chef:</Text><Text>{recipe.chef}</Text></View>}
+                {recipe?.chef && <View className="flex-row gap-2"><Text className={`font-bold ${largerFont ? 'text-lg' : 'text-md'}`}>Chef:</Text><Text className={` ${largerFont ? 'text-lg' : 'text-md'}`}>{recipe.chef}</Text></View>}
 
               
 
@@ -119,28 +131,28 @@ useEffect(() => {
 
                 {recipe?.source && (
                     <View className="flex-row flex-wrap gap-2">
-                        <Text className="font-bold" >Source:</Text>
+                        <Text className={`font-bold ${largerFont ? 'text-lg' : 'text-md'}`} >Source:</Text>
                         <TouchableOpacity onPress={() => openSource(recipe.source)}>
-                        <Text className="text-blue-700 underline underline ">{recipe.source}</Text>
+                        <Text className={` ${largerFont ? 'text-lg' : 'text-md'} text-blue-700 underline`}>{recipe.source}</Text>
                         </TouchableOpacity>
                     </View>
                 )}
 
-                {recipe?.cuisine && <View className="flex-row gap-2"><Text className="font-bold">Cuisine:</Text><Text>{recipe.chef}</Text></View>}
-                {recipe?.servings && <Text><Text className="font-bold gap-2">Servings:</Text> {recipe?.servings}</Text>}
+                {recipe?.cuisine && <View className="flex-row gap-2"><Text className={`font-bold ${largerFont ? 'text-lg' : 'text-md'}`}>Cuisine:</Text ><Text className={` ${largerFont ? 'text-lg' : 'text-md'}`} >{recipe.chef}</Text></View>}
+                {recipe?.servings && <Text className={`${largerFont ? 'text-lg' : 'text-md'}`} ><Text className="font-bold gap-2">Servings:</Text> {recipe?.servings}</Text>}
 
 
                 {recipe?.description && <View className="pt-4 pb-4">
-                    <Text className="font-bold text-lg text-center">Description:</Text>
-                    <Text className="text-lg text-center">{recipe?.description}</Text>
+                    <Text className={`font-bold ${largerFont ? 'text-lg' : 'text-md'}`}>Description:</Text>
+                    <Text className={` ${largerFont ? 'text-lg' : 'text-md'}`}>{recipe?.description}</Text>
                 </View>}
 
                 {(recipe?.cookTime || recipe?.prepTime || recipe?.additionalTime || recipe?.totalTime) && <View className=" p-4 border">
                     <Text className="font-bold self-center">Timing</Text>
-                    {recipe?.prepTime && <Text><Text className="font-bold">Prep Time:</Text> {recipe?.prepTime} minutes</Text>}
-                    {recipe?.cookTime && <Text><Text className="font-bold">Cook Time:</Text> {recipe?.cookTime} minutes</Text>}
-                    {recipe?.additionalTime && <Text><Text className="font-bold">Additional Time:</Text> {recipe?.additionalTime} minutes</Text>}
-                    {recipe?.totalTime && <Text><Text className="font-bold">Total Time:</Text> {recipe?.totalTime} minutes</Text>}
+                    {recipe?.prepTime && <Text className={` ${largerFont ? 'text-lg' : 'text-md'}`}><Text className="font-bold">Prep Time:</Text> {recipe?.prepTime} minutes</Text>}
+                    {recipe?.cookTime && <Text className={` ${largerFont ? 'text-lg' : 'text-md'}`}><Text className="font-bold">Cook Time:</Text> {recipe?.cookTime} minutes</Text>}
+                    {recipe?.additionalTime && <Text className={` ${largerFont ? 'text-lg' : 'text-md'}`}><Text className="font-bold">Additional Time:</Text> {recipe?.additionalTime} minutes</Text>}
+                    {recipe?.totalTime && <Text className={` ${largerFont ? 'text-lg' : 'text-md'}`}><Text className="font-bold">Total Time:</Text> {recipe?.totalTime} minutes</Text>}
 
                 </View>}
 
@@ -150,13 +162,15 @@ useEffect(() => {
 
                 {/* ✅ Ingredients FlatList */}
                 {recipe?.ingredients && 
-                <View className="pt-4">
-                    <Text className="text-2xl font-bold mb-2">Ingredients</Text>
+                <View className="pt-4 ">
+                    
+
+                    <Text className="text-2xl font-bold mb-2 ">Ingredients</Text>
                
                     <View>
                         {activeIngredients.length > 0 ? (
                                 recipe.ingredients.map((ingredient, index) => (
-                                    <Text className="p-2" key={index}>
+                                    <Text className={`p-2 ${largerFont ? 'text-2xl' : 'text-md'}`} key={index}>
                                       - {ingredient}
                                     </Text>
                                 ))
@@ -177,7 +191,7 @@ useEffect(() => {
                         <View>
                             {activeInstructions.length > 0 ? (
                                     recipe.instructions.map((instruction, index) => (
-                                        <Text className=" p-2" key={index}>
+                                        <Text className={`p-2 ${largerFont ? 'text-2xl' : 'text-md'}`} key={index}>
                                         <Text className="font-bold">{index + 1}.</Text> {instruction}
                                         </Text>
                                     ))
@@ -197,7 +211,7 @@ useEffect(() => {
                         <View className="p-2 text-xs">
                             {activeRestrictions.length > 0 ? (
                                 activeRestrictions.map(([key]) => (
-                                    <Text key={key}>
+                                    <Text className={`${largerFont ? 'text-2xl' : 'text-md'}`} key={key}>
                                       ✅ {key.replace(/([A-Z])/g, " $1").trim()}
                                     </Text>
                                 ))
@@ -211,9 +225,9 @@ useEffect(() => {
 
                 {recipe?.notes && 
                     <View className="m-4">
-                        <Text className="text-lg font-bold ">Additional Notes for</Text> 
-                        <Text className="text-lg font-bold">{recipe.dishName}</Text>
-                        <Text className="italic">"{recipe.notes}"</Text>
+                        <Text className={`font-bold ${largerFont ? 'text-2xl' : 'text-md'}`}>Additional Notes for</Text> 
+                        <Text className={`font-bold ${largerFont ? 'text-2xl' : 'text-md'}`}>{recipe.dishName}</Text>
+                        <Text className={`italic ${largerFont ? 'text-2xl' : 'text-md'}`}>"{recipe.notes}"</Text>
                     </View>
                 }        
 
