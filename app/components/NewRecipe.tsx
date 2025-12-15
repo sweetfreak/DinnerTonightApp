@@ -185,6 +185,87 @@ const [localImageUri, setLocalImageUri] = useState<string | null>(null);
       }
   }
 
+const handleScrapeRecipe = async () => {
+  if (!recipe.source) {
+    alert("Please enter a recipe URL.");
+    return;
+  }
+
+  try {
+    const res = await fetch(
+      "https://us-central1-recipe-react-app-a8ca5.cloudfunctions.net/scrapeRecipe",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: recipe.source }),
+      }
+    );
+    console.log(res)
+
+    if (!res.ok) throw new Error();
+
+    const data = await res.json();
+
+    setRecipe(prev => ({
+      ...prev,
+      ...data,
+    }));
+
+    alert("Recipe filled! Review and edit.");
+  } catch {
+    alert("Could not scrape recipe. Try manual entry.");
+  }
+};
+  
+  // const handleScrapeRecipe = async() => {
+  //   if (!recipe.source) return alert("Please enter a recipe URL first.")
+
+  //     try {
+  //       const response = await fetch(recipe.source)
+  //       const html = await response.text()
+
+  //       //extract json-ld structured data from html
+  //       const jsonLdMatch = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/i)
+  //       if (!jsonLdMatch) {
+  //         return alert("Sorry, could not find recipe info on this page")
+  //       }
+
+  //       let parsedData: any = null
+
+  //       try {
+  //         parsedData = JSON.parse(jsonLdMatch[1])
+  //       } catch (error) {
+  //         console.error("Error parsing JSON-LD:", error)
+  //         return alert("Failed to parse recipe info")
+  //       }
+
+  //       //some sites wrap recipe in @graph
+  //       let recipeData = parsedData
+  //       if (parsedData["@graph"]) {
+  //         recipeData = parsedData["@graph"].find((item: any) => item["@type"] === "Recipe") || parsedData["@graph"][0]
+  //       } else if (parsedData["@type"] === "Recipe") {
+  //         recipeData = parsedData
+  //       }
+
+  //       setRecipe(prev => ({
+  //         ...prev,
+  //         dishName: recipeData.name || prev.dishName,
+  //         imageURL: Array.isArray(recipeData.image) ? recipeData.image[0] : recipeData.image || prev.imageURL,
+  //         chef: recipeData.author?.name || prev.chef,
+  //         description: recipeData.description || prev.description,
+  //         // ingredients: recipeData.recipeIngredient || prev.ingredients,
+  //         ingredients: recipeData.recipeIngredients?.map((ingredient: any) => typeof ingredient === "string" ? ingredient : ingredient.text) || prev.ingredients,
+  //         instructions: recipeData.recipeInstructions?.map((step: any) => typeof step === "string" ? step : step.text) || prev.instructions,
+
+  //       }))
+  //       alert("Recipe info filled form link! You can now edit fields and submit recipe")
+  //     } catch (error)
+  //     {
+  //       console.error("Error scraping recipe:", error)
+  //       alert("Failed to fetch recipe info. Try entering manually at this time.")
+  //     }
+  // }
+
   const handleUploadImage = async () => {
     const imageUri = await pickImage()
   }
@@ -195,6 +276,24 @@ const [localImageUri, setLocalImageUri] = useState<string | null>(null);
      
         <View>
           <Text className="text-2xl font-bold mb-4 text-white">Add a New Recipe!</Text>
+
+          <Text>Quick Submit:</Text>
+          <TextInput 
+            value={recipe.source}
+            onChangeText={text => updateField("source", text)}
+            placeholder="www.recipe.com/recipe"
+            placeholderTextColor="#888"
+            className="border p-2 mb-2 bg-white rounded"
+          />
+
+          <View className=" p-6 pb-12">
+            <TouchableOpacity onPress={() => handleScrapeRecipe()} className="mt-6 bg-blue-500 p-3 rounded-xl items-center">
+              <Text className="text-white font-bold text-lg">Grab Recipe from Web</Text>
+            </TouchableOpacity>
+          </View>
+
+
+          <Text>Manual Entry:</Text>
 
           {/* Dish Name */}
           <Text className="text-white">Dish Name:</Text>

@@ -44,9 +44,10 @@ export default function FriendList({friends, openFriendChat, pendingRequests}: F
                 Friends
             </Text>
                 {friends.map((friend, index) => {
-                    return <View key={index} className="border-t border-gray-400 flex-col items-center"> 
+                    return <View key={index} className="border-t border-gray-400 flex-col items-center "> 
                                 {/* <Text>{friend.displayName} </Text> */}
-
+                                <View className='py-2'>
+                              <View className='bg-lime-300 rounded-xl px-8'>
                                 <Text className="self-center pt-4 font-bold text-xl">{friend.displayName}</Text>
                                 <View className="flex-row gap-4">
                                     <Link 
@@ -60,8 +61,9 @@ export default function FriendList({friends, openFriendChat, pendingRequests}: F
                                         >
                                         <Text className="text-lime-800">Open Chat</Text>
                                     </TouchableOpacity>   
-                                </View>
-                                            
+                                  </View>
+                                  </View>
+                                </View>          
                             </View>
                 })}
             </ScrollView>

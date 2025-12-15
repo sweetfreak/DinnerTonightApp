@@ -6,7 +6,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject, FirebaseSto
 import * as ImagePicker from "expo-image-picker";
 import type UserProfile from "../../types/User";
 import { useUserProfile } from "../../contexts/UserProfileContext";
-import { Link, useLocalSearchParams, useRouter } from "expo-router";
+import { Link, useRouter } from "expo-router";
 
 interface EditProfileProps {
   // currentUserProfile: UserProfile | null;

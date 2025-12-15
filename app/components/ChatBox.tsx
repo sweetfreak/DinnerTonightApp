@@ -137,6 +137,28 @@ async function handleSendRecipe(recipe: Recipe) {
   }
 }
 
+//added for push notification
+async function sendPushNotification(toToken: string, messageText: string, chatId: string) {
+  await fetch("https://exp.host/--/api/v2/push/send", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "Accept-encoding": "gzip, deflate",
+    },
+    body: JSON.stringify({
+      to: toToken,
+      sound: "default",
+      title: "New message",
+      body: messageText,
+      data: {
+        screen: "/(tabs)/chat/[chatId]" //"/chat",  // route you want to open
+        //params: { chatId },
+      },
+    }),
+  });
+}
+
   // submit message and update chat
   async function handleSubmit() {
     //prevent empty messages and no user
@@ -160,6 +182,24 @@ async function handleSendRecipe(recipe: Recipe) {
         latestMessageSenderID: currentUserProfile.uid,
         updatedAt: serverTimestamp(),
       });
+
+      //For push notifications
+      const otherUserId = chat!.participants.find(
+        (uid) => uid !== currentUserProfile.uid
+      )
+      if (otherUserId) {
+        const otherUserRef = doc(db, 'users', otherUserId)
+        const otherUserSnap = await getDoc(otherUserRef)
+
+        if (otherUserSnap.exists()) {
+          const { expoPushToken } = otherUserSnap.data()
+
+          //send notif if they have token
+          if (expoPushToken) {
+            await sendPushNotification(expoPushToken, newMessage, chat!.id)
+          }
+        }
+      }
 
       setNewMessage("");
     } catch (error) {

@@ -12,6 +12,10 @@ import { useEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics"
 
+import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { doc, getDoc, getDocs, addDoc, documentId, updateDoc, arrayUnion, collection, query, where, onSnapshot, orderBy, serverTimestamp } from "firebase/firestore";
+import { db } from "../firebase/firebaseConfig";
+
 
 export default function RootLayout() {
   return (
@@ -32,6 +36,22 @@ export default function RootLayout() {
 function AppStack() {
   const { currentUser, loading } = useAuth();
   const router = useRouter();
+
+  //ADDED for push notifs
+  const { expoPushToken } = usePushNotifications()
+
+  useEffect(() => {
+    if (!currentUser || !expoPushToken ) return
+
+    const userRef = doc(db, 'users', currentUser.uid)
+
+    updateDoc(userRef, {
+      expoPushToken: expoPushToken.data,
+    }).catch((err) => console.log('Error saving token:', err))
+
+  }, [currentUser, expoPushToken])
+  
+  //End of added for push notifications
 
     useEffect(() => {
   if (loading) return;
