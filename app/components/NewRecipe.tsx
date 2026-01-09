@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, TextInput, Image, ScrollView, Button, Switch, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, Image, ScrollView, Button, Switch, TouchableOpacity, Modal } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { db } from "../../firebase/firebaseConfig";
@@ -27,6 +27,7 @@ const router = useRouter();
 //let newDownloadURL = ''
 //const [uploading, setUploading] = useState(false)
 const [localImageUri, setLocalImageUri] = useState<string | null>(null);
+const [showTipsModal, setShowTipsModal] = useState(false);
 //const [imageURL, setImageURL] = useState<string | null>()
 
   const [recipe, setRecipe] = useState<Partial<Recipe>>({
@@ -110,7 +111,8 @@ const [localImageUri, setLocalImageUri] = useState<string | null>(null);
 
     try {
 
-      let uploadedImageURL = ''
+      // Prefer scraped imageURL if present; only upload a local image when the user picked one
+      let uploadedImageURL = (recipe.imageURL as string) || ''
 
       if (localImageUri) {
         uploadedImageURL = await uploadImageToFirebase(localImageUri, `images/${Date.now()}.jpg`)
@@ -192,6 +194,8 @@ const handleScrapeRecipe = async () => {
   }
 
   try {
+    console.log("📡 Sending request to scrape:", recipe.source);
+    
     const res = await fetch(
       "https://us-central1-recipe-react-app-a8ca5.cloudfunctions.net/scrapeRecipe",
       {
@@ -200,11 +204,18 @@ const handleScrapeRecipe = async () => {
         body: JSON.stringify({ url: recipe.source }),
       }
     );
-    console.log(res)
-
-    if (!res.ok) throw new Error();
+    
+    console.log("📲 Response status:", res.status);
+    console.log("📲 Response headers:", res.headers);
 
     const data = await res.json();
+    console.log("📦 Scraped data:", data);
+
+    if (!res.ok) {
+      console.error("❌ Scrape error response:", data);
+      alert(`Error: ${data.error || "Could not scrape recipe"}`);
+      return;
+    }
 
     setRecipe(prev => ({
       ...prev,
@@ -212,59 +223,13 @@ const handleScrapeRecipe = async () => {
     }));
 
     alert("Recipe filled! Review and edit.");
-  } catch {
+  } catch (error) {
+    console.error("❌ Scrape request failed:", error);
     alert("Could not scrape recipe. Try manual entry.");
   }
 };
   
-  // const handleScrapeRecipe = async() => {
-  //   if (!recipe.source) return alert("Please enter a recipe URL first.")
-
-  //     try {
-  //       const response = await fetch(recipe.source)
-  //       const html = await response.text()
-
-  //       //extract json-ld structured data from html
-  //       const jsonLdMatch = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/i)
-  //       if (!jsonLdMatch) {
-  //         return alert("Sorry, could not find recipe info on this page")
-  //       }
-
-  //       let parsedData: any = null
-
-  //       try {
-  //         parsedData = JSON.parse(jsonLdMatch[1])
-  //       } catch (error) {
-  //         console.error("Error parsing JSON-LD:", error)
-  //         return alert("Failed to parse recipe info")
-  //       }
-
-  //       //some sites wrap recipe in @graph
-  //       let recipeData = parsedData
-  //       if (parsedData["@graph"]) {
-  //         recipeData = parsedData["@graph"].find((item: any) => item["@type"] === "Recipe") || parsedData["@graph"][0]
-  //       } else if (parsedData["@type"] === "Recipe") {
-  //         recipeData = parsedData
-  //       }
-
-  //       setRecipe(prev => ({
-  //         ...prev,
-  //         dishName: recipeData.name || prev.dishName,
-  //         imageURL: Array.isArray(recipeData.image) ? recipeData.image[0] : recipeData.image || prev.imageURL,
-  //         chef: recipeData.author?.name || prev.chef,
-  //         description: recipeData.description || prev.description,
-  //         // ingredients: recipeData.recipeIngredient || prev.ingredients,
-  //         ingredients: recipeData.recipeIngredients?.map((ingredient: any) => typeof ingredient === "string" ? ingredient : ingredient.text) || prev.ingredients,
-  //         instructions: recipeData.recipeInstructions?.map((step: any) => typeof step === "string" ? step : step.text) || prev.instructions,
-
-  //       }))
-  //       alert("Recipe info filled form link! You can now edit fields and submit recipe")
-  //     } catch (error)
-  //     {
-  //       console.error("Error scraping recipe:", error)
-  //       alert("Failed to fetch recipe info. Try entering manually at this time.")
-  //     }
-  // }
+  
 
   const handleUploadImage = async () => {
     const imageUri = await pickImage()
@@ -277,7 +242,7 @@ const handleScrapeRecipe = async () => {
         <View>
           <Text className="text-2xl font-bold mb-4 text-white">Add a New Recipe!</Text>
 
-          <Text>Quick Submit:</Text>
+          <Text className="text-white">Quick Submit:</Text>
           <TextInput 
             value={recipe.source}
             onChangeText={text => updateField("source", text)}
@@ -286,24 +251,53 @@ const handleScrapeRecipe = async () => {
             className="border p-2 mb-2 bg-white rounded"
           />
 
-          <View className=" p-6 pb-12">
+          <View className="flex-row p-6 pb-12 gap-4">
+
             <TouchableOpacity onPress={() => handleScrapeRecipe()} className="mt-6 bg-blue-500 p-3 rounded-xl items-center">
               <Text className="text-white font-bold text-lg">Grab Recipe from Web</Text>
             </TouchableOpacity>
+            
+            <TouchableOpacity onPress={() => setShowTipsModal(true)} className="mt-6 self-center bg-lime-600 p-3 rounded-xl ">
+            <Text className=" text-white font-bold text-lg">💡 Tips</Text>
+          </TouchableOpacity>
           </View>
 
+          
 
-          <Text>Manual Entry:</Text>
+          <Modal
+            visible={showTipsModal}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setShowTipsModal(false)}
+          >
+            <View className="flex-1 justify-center items-center bg-black/50">
+              <View className="bg-white rounded-lg p-6 w-80 max-h-96">
+                <Text className="text-lg font-bold mb-4 text-gray-800">Tips for Adding Recipes</Text>
+                <ScrollView>
+                  <Text className="text-gray-700 text-base leading-6">
+                    This is an in-progress feature. For best results, submit blogs and lesser-known websites. For other websites, use this as a bookmark to help you organize and access your recipes.
+                  </Text>
+                </ScrollView>
+                <TouchableOpacity onPress={() => setShowTipsModal(false)} className="mt-4 bg-blue-500 p-3 rounded-lg items-center">
+                  <Text className="text-white font-bold">OK</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
+          <Text className="text-white">Manual Entry:</Text>
 
           {/* Dish Name */}
           <Text className="text-white">Dish Name:</Text>
           <TextInput
             value={recipe.dishName}
-            onChangeText={text => updateField("dishName", text)}
+            onChangeText={text => updateField("dishName", text.slice(0, 100))}
             placeholder="Dish Name"
             placeholderTextColor="#888"
             className="border p-2 mb-2 bg-white rounded"
+            maxLength={100}
           />
+          <Text className="text-gray-300 text-sm mb-4">{recipe.dishName?.length || 0}/100</Text>
 
           {/* Source */}
           <Text className="text-white">Source (URL):</Text>
@@ -319,11 +313,13 @@ const handleScrapeRecipe = async () => {
           <Text className="text-white">Chef:</Text>
           <TextInput
             value={recipe.chef}
-            onChangeText={text => updateField("chef", text)}
+            onChangeText={text => updateField("chef", text.slice(0, 100))}
             placeholder="Chef or author"
             placeholderTextColor="#888"
             className="border p-2 mb-2 bg-white rounded"
+            maxLength={100}
           />
+          
 
           {/* Cuisine */}
           <Text className="text-white">Cuisine:</Text>
@@ -333,6 +329,7 @@ const handleScrapeRecipe = async () => {
             placeholder="e.g. Italian, Thai, Mexican"
             placeholderTextColor="#888"
             className="border p-2 mb-2 bg-white rounded"
+            maxLength={100}
           />
 
           {/* Description */}
@@ -354,6 +351,7 @@ const handleScrapeRecipe = async () => {
             placeholder="e.g. 15 minutes"
             placeholderTextColor="#888"
             className="border p-2 mb-2 bg-white rounded"
+            maxLength={100}
           />
 
           <Text className="text-white">Cook Time:</Text>
@@ -363,6 +361,7 @@ const handleScrapeRecipe = async () => {
             placeholder="e.g. 30 minutes"
             placeholderTextColor="#888"
             className="border p-2 mb-2 bg-white rounded"
+            maxLength={100}
           />
 
           <Text className="text-white">Additional Time:</Text>
@@ -372,6 +371,7 @@ const handleScrapeRecipe = async () => {
             placeholder="e.g. chill overnight"
             placeholderTextColor="#888"
             className="border p-2 mb-2 bg-white rounded"
+            maxLength={100}
           />
 
           <Text className="text-white">Total Time:</Text>
@@ -381,6 +381,7 @@ const handleScrapeRecipe = async () => {
             placeholder="e.g. 45 minutes total"
             placeholderTextColor="#888"
             className="border p-2 mb-2 bg-white rounded"
+            maxLength={100}
           />
 
           {/* Servings */}
@@ -392,6 +393,7 @@ const handleScrapeRecipe = async () => {
             placeholderTextColor="#888"
             keyboardType="numeric"
             className="border p-2 mb-2 bg-white rounded"
+            maxLength={100} 
           />
 
           {/* Image URL */}
@@ -401,8 +403,15 @@ const handleScrapeRecipe = async () => {
             onPress={handleUploadImage}
           />
 
+          {recipe.imageURL && !localImageUri && (
+            <View>
+              <Text className="text-white mt-2">✅ Scraped image:</Text>
+              <Image source={{ uri: recipe.imageURL }} className="w-32 h-32 rounded mt-2" />
+            </View>
+          )}
+
           { localImageUri ? (
-            <Text className="text-white mt-2">✅ Image uploaded!</Text>
+            <Text className="text-white mt-2">✅ Local image selected:</Text>
           ) : null}
 
           {localImageUri && (<View>

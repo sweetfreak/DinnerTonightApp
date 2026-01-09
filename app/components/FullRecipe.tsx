@@ -81,7 +81,7 @@ useEffect(() => {
                         ? { uri: recipe.imageURL } 
                         : require("../../assets/placeholder.jpg")
                     }
-                    className="w-full h-48 rounded-lg border-lime-800 border-4"
+                    className={`w-full h-72 rounded-lg border-8 ${isFavorite ? 'border-red-500' : 'border-lime-800'}`}
                     resizeMode="cover"  // ✅ this replaces object-cover
                 />  
             </View>
@@ -91,16 +91,20 @@ useEffect(() => {
                     <Text className="text-4xl">{recipe?.dishName}</Text>
 
                     
-                    {recipe &&
+                    
+                </View>
+                {recipe && <View className="flex-row items-center">
+                        <Text className="text-2xl my-2">{isFavorite? "Remove Favorite:" : "Make Favorite:" }</Text>
                         <TouchableOpacity onPress={(e) => {
                         e.stopPropagation();
                         toggleFavorite(recipe.id);
                         }}>
-                        <Text className="text-lg" onPress={() => toggleFavorite(recipe.id)}>  {isFavorite ? "♥️" : "♡" }</Text>
+                        <Text className="text-2xl" onPress={() => toggleFavorite(recipe.id)}>  {isFavorite ? "♥️" : "♡" }</Text>
                         </TouchableOpacity>
+                        </View>
                     }
-                </View>
                 <View className="gap-4 py-4 flex-row items-center self-start">
+                    
                         <Text className="italic">Make Font larger:</Text>
                     <Switch 
                         className="border bg-gray-400 rounded-full"

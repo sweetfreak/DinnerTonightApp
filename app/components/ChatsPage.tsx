@@ -83,40 +83,51 @@ export default function ChatsPage({currentUserProfile, friends, selectedFriendId
     },[selectedFriendId])
 
 useEffect(() => {
-  if (!showSharedRecipes|| !currentUserProfile) return;
+  if (!showSharedRecipes || !currentUserProfile || !allChats.length) return;
 
-  async function fetchSharedRecipes() {
+  const unsubscribers: Array<() => void> = [];
+  const recipesByChat = new Map<string, Recipe[]>();
+
+  (async () => {
     try {
-      const chatIds = allChats.map(c => c.id);
-      let allRecipeMessages: Recipe[] = [];
-
-      for (const chatId of chatIds) {
-        const messagesRef = collection(db, "chats", chatId, "messages");
+      for (const chat of allChats) {
+        const messagesRef = collection(db, "chats", chat.id, "messages");
         const q = query(messagesRef, where("type", "==", "recipe"));
-        const snapshot = await getDocs(q);
+        
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+          const recipes = snapshot.docs.map(docSnap => {
+            const data = docSnap.data();
+            return {
+              id: data.recipeId,
+              dishName: data.recipeTitle,
+              imageURL: data.recipePhotoURL,
+              description: data.recipeDescription || "",
+            } as Recipe;
+          });
 
-        const recipes = snapshot.docs.map(docSnap => {
-          const data = docSnap.data();
-          return {
-            id: data.recipeId,
-            dishName: data.recipeTitle,
-            imageURL: data.recipePhotoURL,
-            description: data.recipeDescription || "",
-          } as Recipe;
+          recipesByChat.set(chat.id, recipes);
+          
+          // Combine all recipes from all chats
+          const allRecipeMessages: Recipe[] = [];
+          recipesByChat.forEach(recipes => allRecipeMessages.push(...recipes));
+          
+          // Remove duplicates by recipe id
+          const uniqueRecipes = Array.from(new Map(allRecipeMessages.map(r => [r.id, r])).values());
+          setSharedRecipes(uniqueRecipes);
         });
 
-        allRecipeMessages = [...allRecipeMessages, ...recipes];
+        unsubscribers.push(unsubscribe);
       }
-
-      setSharedRecipes(allRecipeMessages);
     } catch (err) {
-      console.error("Error fetching shared recipes:", err);
+      console.error("Error setting up recipe listeners:", err);
       setSharedRecipes([]);
     }
-  }
+  })();
 
-  fetchSharedRecipes();
-}, [showSharedRecipes]);
+  return () => {
+    unsubscribers.forEach(unsub => unsub());
+  };
+}, [showSharedRecipes, allChats, currentUserProfile]);
 
     async function getOrCreateChat(currentUid: string, friendUid: string) {
         const chatsRef = collection(db, "chats")
@@ -173,7 +184,7 @@ useEffect(() => {
 
     }
 
-        console.log("TEST")
+        console.log("TEST chat page")
 
 
     return (

@@ -63,7 +63,7 @@ export default function FriendSearch() {
 
       {/* Results */}
       <ScrollView className="flex-1">
-        {filtered.map((user) => (
+        {search && filtered.map((user) => (
           <Link
             key={user.uid}
             className="bg-lime-200 border border-lime-600 p-4 rounded-lg mb-3"
@@ -84,7 +84,7 @@ export default function FriendSearch() {
           </Link>
         ))}
 
-        {filtered.length === 0 && (
+        {search && filtered.length === 0 && (
           <Text className="text-center text-gray-600 mt-10">
             No users found
           </Text>

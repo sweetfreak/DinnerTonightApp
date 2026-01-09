@@ -148,7 +148,7 @@ export default function EditRecipe() {
   try {
     const storage = getStorage();
 
-    if (recipeData?.imageURL && recipeData.imageURL.includes("firebasestorage.googleapis.com")) {
+    if (recipeData?.imageURL && typeof recipeData.imageURL === "string" && recipeData.imageURL.includes("firebasestorage.googleapis.com")) {
       await deleteOldImage(storage, recipeData.imageURL);
     }
 
@@ -183,7 +183,7 @@ export default function EditRecipe() {
     }
 
   async function deleteOldImage(storage: FirebaseStorage, oldImageUrl?: string) {
-  if (!oldImageUrl || !oldImageUrl.includes("firebasestorage.googleapis.com")) return;
+  if (!oldImageUrl || typeof oldImageUrl !== "string" || !oldImageUrl.includes("firebasestorage.googleapis.com")) return;
 
   try {
     // Extract the file path from the download URL

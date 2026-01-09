@@ -52,7 +52,7 @@ export default function Recipes() {
     <ScrollView className="flex-1 bg-lime-200 px-4">
       {/* Header */}
       
-                        <Text className='text-3xl text-center text-lime-800 font-bold m-4'>Recipes</Text>
+      <Text className='text-3xl text-center text-lime-800 font-bold m-4'>Recipes</Text>
 
       
       
@@ -95,8 +95,10 @@ export default function Recipes() {
 
       {/* Recipe list */}
       
-      {filtered.length > 0 ? (
-        filtered.map((dish, index) => (
+      {filterType === "all" && !searchQuery ? (
+        <Text className="text-center text-gray-600 mt-10">Enter a search term to see recipes</Text>
+      ) : filtered.length > 0 ? (
+         filtered.map((dish, index) => (
           <View key={index} className="mb-2">
           <RecipeCard
             key={dish.id}

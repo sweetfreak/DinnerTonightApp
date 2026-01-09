@@ -45,7 +45,15 @@
           }
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+      "expo-build-properties",
+      {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
@@ -56,6 +64,12 @@
       "eas": {
         "projectId": "a185f514-5d5c-42e6-a3ea-54b35a5680c6"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/a185f514-5d5c-42e6-a3ea-54b35a5680c6"
     }
   }
 }

@@ -21,25 +21,28 @@ export default function RecipeCard({ recipe  }: RecipeCardMiniProps) {
     return (
         <Link href={{ pathname:"../components/FullRecipe", params: {recipeId: recipe.id }}}  
         asChild>
-        <Pressable className="flex w-120 h-auto bg-lime-100 rounded-lg p-4 border-8 border-lime-700 active:opacity-50">
-            <View className="flex p-5">
+        <Pressable className={`flex w-120 h-auto bg-lime-100 rounded-lg border-8 ${isFavorite ? 'border-red-500' : 'border-lime-700'} active:opacity-50 relative`}>
+            
+
+            <View className="relative flex p-5 pt-0">
                 <Image 
                     source={recipe.imageURL ? {uri: recipe.imageURL} : require("../../assets/placeholder.jpg") } 
-                    className="w-full h-48 object-cover rounded-t-lg"
+                    className="w-full h-48 object-cover my-4 rounded-lg"
                     resizeMode="cover"
-                />  
+                />
+                <View className="absolute">
+                    <Text className="text-lg">{isFavorite ? "♥️" : ""}</Text>
+                </View>
+                <View className="absolute bottom-9 left-5">
+                    <Text className="text-3xl font-bold text-white opacity-90 bg-black/25 px-2 py-1 rounded">{recipe.dishName}</Text>
+                </View>
            
             </View>
             
             <View>
-                <View className="flex-row items-center">
-                {/* <Link href={{ pathname:"../components/FullRecipe", params: {recipeId: recipe.id }}}  > */}
-                    <Text className="text-4xl font-bold text-blue-800 font-underline">{recipe.dishName}</Text>
-                {/* </Link> */}
+                
+           
 
-                     <Text>  {isFavorite ? "♥️" : "" }</Text>
-              
-                </View>
 
                 {recipe?.chef && <View className="flex-row"><Text className="font-bold">Chef: </Text><Text>{recipe.chef}</Text></View>}
 
