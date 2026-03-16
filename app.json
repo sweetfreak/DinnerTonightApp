@@ -7,13 +7,18 @@
     "icon": "./assets/images/dinnertonightapplogo.png",
     "scheme": "dinnertonightapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
+    "experiments": {
+      "reactCompiler": false
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.sweetfreak.DinnerTonightApp",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "deploymentTarget": "13.4"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +28,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      // "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "static",
@@ -31,6 +37,14 @@
       "bundler": "metro"
     },
     "plugins": [
+      [
+        "@react-native-firebase/app",
+        {
+          "ios": {
+            "useFrameworks": "dynamic"
+          }
+        }
+      ],
       "expo-notifications",
       "expo-router",
       [
@@ -45,15 +59,15 @@
           }
         }
       ],
-      "expo-web-browser",
       [
-      "expo-build-properties",
-      {
+        "expo-build-properties",
+        {
           "ios": {
-            "useFrameworks": "static"
+            "useFrameworks": "dynamic"
           }
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true,

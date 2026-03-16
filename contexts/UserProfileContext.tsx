@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react"
+import { createContext, useContext, useState, useEffect, useRef } from "react"
 import { getAuth, onAuthStateChanged } from "firebase/auth"
 import { db } from "../firebase/firebaseConfig"
 import { doc, getDoc, onSnapshot, updateDoc } from "firebase/firestore"
@@ -28,6 +28,8 @@ export const UserProfileProvider = ({ children }: { children: React.ReactNode })
 
   const [favorites, setFavorites] = useState<string[]>(currentUserProfile?.savedRecipes || [])
 
+  const unsubscribersRef = useRef<(() => void)[]>([])
+
   const auth = getAuth()
 
   const refreshProfile = async () => {
@@ -45,6 +47,9 @@ export const UserProfileProvider = ({ children }: { children: React.ReactNode })
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (!user) {
+        // Unsubscribe all active listeners on logout
+        unsubscribersRef.current.forEach(unsub => unsub());
+        unsubscribersRef.current = [];
         setCurrentUserProfile(null);
         setProfilePicture(null);
         return;
@@ -59,7 +64,15 @@ export const UserProfileProvider = ({ children }: { children: React.ReactNode })
           setCurrentUserProfile(profile);
           setProfilePicture(profile.photoURL ?? null);
         }
+      }, (error) => {
+        if (error.code === 'permission-denied') {
+          console.log('Permission denied for user profile, likely logged out');
+        } else {
+          console.error('Error in user profile snapshot:', error);
+        }
       });
+
+      unsubscribersRef.current.push(unsubscribeSnapshot);
 
       return () => unsubscribeSnapshot();
     });

@@ -118,6 +118,8 @@ const [showTipsModal, setShowTipsModal] = useState(false);
         uploadedImageURL = await uploadImageToFirebase(localImageUri, `images/${Date.now()}.jpg`)
       }
 
+
+
       const newRecipe: Recipe = {
         ...(recipe as Recipe), // Type assertion since all fields are optional in state
         imageURL: uploadedImageURL,
@@ -144,7 +146,9 @@ const [showTipsModal, setShowTipsModal] = useState(false);
       router.back();
 
     } catch (error) {
+      const errorForStackTrace = new Error();
       console.error("Error adding recipe:", error);
+      console.error("Stack trace:", errorForStackTrace.stack);
     }
   };
 
@@ -454,7 +458,7 @@ const handleScrapeRecipe = async () => {
             {recipe.instructions?.map((ing, i) => (
               <View key={i} className="flex-row items-center mb-2">
                 <TextInput
-                  value={ing}
+                  value={typeof ing === 'string' ? ing : ing?.text || ''}
                   onChangeText={text => updateInstruction(i, text)}
                   placeholder={`Step ${i + 1}`}
                   placeholderTextColor="#888"

@@ -36,7 +36,8 @@ const filteredRecipes = savedRecipes.filter((r) =>
   r.dishName.toLowerCase().includes(searchQuery.toLowerCase())
 );
 
-const friendName = chat!.participantProfiles?.find(p => p.uid !== currentUserProfile?.uid)?.displayName;
+const otherUid = chat!.participants.find(uid => uid !== currentUserProfile?.uid);
+const friendName = otherUid ? chat!.participantNames?.[otherUid] : "Unknown";
 
 const screenHeight = Dimensions.get('window').height;
 const inputAreaHeight = 100; // adjust based on styling
@@ -74,6 +75,12 @@ useEffect(() => {
       ...(thisDoc.data() as Omit<Message, "id">),
     }));
     setMessages(chatMessages);
+  }, (error) => {
+    if (error.code === 'permission-denied') {
+      console.log('Permission denied for messages, likely logged out');
+    } else {
+      console.error('Error in messages snapshot:', error);
+    }
   });
 
   //create chat ref
@@ -84,6 +91,12 @@ useEffect(() => {
     if (chatSnap.exists()) {
       const updatedChat = chatSnap.data();
    
+    }
+  }, (error) => {
+    if (error.code === 'permission-denied') {
+      console.log('Permission denied for chat ref, likely logged out');
+    } else {
+      console.error('Error in chat ref snapshot:', error);
     }
   });
 
@@ -188,16 +201,20 @@ async function sendPushNotification(toToken: string, messageText: string, chatId
         (uid) => uid !== currentUserProfile.uid
       )
       if (otherUserId) {
-        const otherUserRef = doc(db, 'users', otherUserId)
-        const otherUserSnap = await getDoc(otherUserRef)
+        try {
+          const otherUserRef = doc(db, 'users', otherUserId)
+          const otherUserSnap = await getDoc(otherUserRef)
 
-        if (otherUserSnap.exists()) {
-          const { expoPushToken } = otherUserSnap.data()
+          if (otherUserSnap.exists()) {
+            const { expoPushToken } = otherUserSnap.data()
 
-          //send notif if they have token
-          if (expoPushToken) {
-            await sendPushNotification(expoPushToken, newMessage, chat!.id)
+            //send notif if they have token
+            if (expoPushToken) {
+              await sendPushNotification(expoPushToken, newMessage, chat!.id)
+            }
           }
+        } catch (error) {
+          console.error(`Error fetching other user ${otherUserId}:`, error);
         }
       }
 

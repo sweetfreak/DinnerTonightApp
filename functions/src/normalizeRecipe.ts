@@ -15,6 +15,9 @@ export function normalizeRecipe(recipe: any, url: string) {
   let ingredients = recipe.recipeIngredient || recipe.recipeIngredients || recipe.ingredients || [];
   
   let instructions = recipe.recipeInstructions || recipe.instructions || [];
+  if (instructions && typeof instructions === 'object' && instructions.itemListElement) {
+    instructions = instructions.itemListElement;
+  }
   if (Array.isArray(instructions) && instructions.length > 0) {
     instructions = instructions.map((s: any) =>
       typeof s === "string" ? s : (s.text || s)

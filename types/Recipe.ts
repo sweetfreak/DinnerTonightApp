@@ -12,7 +12,7 @@ export default interface Recipe {
     servings: string;
     imageURL: string;
     ingredients: string[];
-    instructions: string[];
+    instructions: (string | { text?: string; name?: string })[];
     notes?: string;
     dietaryRestrictions: {
         vegetarian: boolean;

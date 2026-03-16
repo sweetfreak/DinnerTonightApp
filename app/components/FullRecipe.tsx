@@ -196,7 +196,7 @@ useEffect(() => {
                             {activeInstructions.length > 0 ? (
                                     recipe.instructions.map((instruction, index) => (
                                         <Text className={`p-2 ${largerFont ? 'text-2xl' : 'text-md'}`} key={index}>
-                                        <Text className="font-bold">{index + 1}.</Text> {instruction}
+                                         <Text className="font-bold">{index + 1}.</Text> {typeof instruction === 'string' ? instruction : (instruction.text || instruction.name || 'Invalid instruction')}
                                         </Text>
                                     ))
                                 ) : (

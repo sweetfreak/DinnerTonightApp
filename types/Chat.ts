@@ -1,7 +1,7 @@
 export default interface Chat {
   id: string
   participants: string[]
-  participantProfiles?: {uid: string, displayName: string}[]
+  participantNames: { [uid: string]: string }
   sharedRecipes?: string[]
   latestMessageText?: string
   latestMessageSenderID?: string

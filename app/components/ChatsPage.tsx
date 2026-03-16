@@ -43,35 +43,28 @@ export default function ChatsPage({currentUserProfile, friends, selectedFriendId
 
   // Listen for real-time chat updates
   const unsubscribe = onSnapshot(q, async (snapshot) => {
-    const fetchedChats: Chat[] = await Promise.all(
-      snapshot.docs.map(async (docSnap) => {
-        const data = docSnap.data();
+    const fetchedChats: Chat[] = snapshot.docs.map((docSnap) => {
+      const data = docSnap.data();
 
-        // Load participant display names
-        const participantProfiles = await Promise.all(
-          data.participants.map(async (uid: string) => {
-            const userRef = doc(db, "users", uid);
-            const userSnap = await getDoc(userRef);
-            return userSnap.exists()
-              ? { uid, displayName: userSnap.data().displayName }
-              : { uid, displayName: "UnknownUser" };
-          })
-        );
-
-        return {
-          id: docSnap.id,
-          participants: data.participants,
-          participantProfiles,
-          sharedRecipes: data.sharedRecipes,
-          latestMessageText: data.latestMessageText || "",
-          latestMessageSenderID: data.latestMessageSenderID || "",
-          updatedAt: data.updatedAt?.toDate?.() || new Date(),
-          messages: [],
-        } as Chat;
-      })
-    );
+      return {
+        id: docSnap.id,
+        participants: data.participants,
+        participantNames: data.participantNames || {},
+        sharedRecipes: data.sharedRecipes,
+        latestMessageText: data.latestMessageText || "",
+        latestMessageSenderID: data.latestMessageSenderID || "",
+        updatedAt: data.updatedAt?.toDate?.() || new Date(),
+        messages: [],
+      } as Chat;
+    });
 
     setAllChats(fetchedChats);
+  }, (error) => {
+    if (error.code === 'permission-denied') {
+      console.log('Permission denied for chats, likely logged out');
+    } else {
+      console.error('Error in chats snapshot:', error);
+    }
   });
 
   return () => unsubscribe();
@@ -114,6 +107,12 @@ useEffect(() => {
           // Remove duplicates by recipe id
           const uniqueRecipes = Array.from(new Map(allRecipeMessages.map(r => [r.id, r])).values());
           setSharedRecipes(uniqueRecipes);
+        }, (error) => {
+          if (error.code === 'permission-denied') {
+            console.log('Permission denied for shared recipes, likely logged out');
+          } else {
+            console.error('Error in shared recipes snapshot:', error);
+          }
         });
 
         unsubscribers.push(unsubscribe);
@@ -145,28 +144,31 @@ useEffect(() => {
             chatDoc = existingChat
         } else {
 
+        // Fetch participant names
+        const participantNames: { [uid: string]: string } = {};
+        participantNames[currentUid] = currentUserProfile?.displayName || "UnknownUser";
+        try {
+            const friendRef = doc(db, 'users', friendUid);
+            const friendSnap = await getDoc(friendRef);
+            participantNames[friendUid] = friendSnap.exists() ? friendSnap.data().displayName || "UnknownUser" : "UnknownUser";
+        } catch (error) {
+            console.error(`Error fetching friend ${friendUid}:`, error);
+            participantNames[friendUid] = "UnknownUser";
+        }
+
         const newChatRef = await addDoc(chatsRef, {
             participants: [currentUid, friendUid],
+            participantNames,
             latestMessage: "",
             updatedAt: serverTimestamp()
         })
         chatDoc = await getDoc(newChatRef)
         }
         
-        const participantProfiles = await Promise.all(
-            chatDoc.data()!.participants.map(async (uid: string) => {
-                const userRef = doc(db,'users', uid)
-                const userSnap = await getDoc(userRef)
-                return userSnap.exists() 
-                    ? {uid, displayName: userSnap.data().displayName }
-                    : {uid, displayName: "UnknownUser" }
-            })
-        )
-
         return {
             id: chatDoc.id,
             participants: chatDoc.data()!.participants,
-            participantProfiles,
+            participantNames: chatDoc.data()!.participantNames || {},
             sharedRecipes: chatDoc.data()!.sharedRecipes,
             latestMessageText: chatDoc.data()!.latestMessageText || "",
             latestMessageSenderID: chatDoc.data()!.latestMessageSenderID || "",

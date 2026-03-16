@@ -27,6 +27,12 @@ export default function Recipes() {
         ...doc.data(),
       })) as Recipe[];
       setAllRecipes(fetched);
+    }, (error) => {
+      if (error.code === 'permission-denied') {
+        console.log('Permission denied for recipes, check rules');
+      } else {
+        console.error('Error in recipes snapshot:', error);
+      }
     });
 
     return unsubscribe;
